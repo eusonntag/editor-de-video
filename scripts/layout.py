@@ -183,6 +183,9 @@ def renderizar_python(origem: Path, destino: Path, enq: Enquadrador, info: dict,
                "-s", f"{enq.ow}x{enq.oh}", "-r", info["fps_str"], "-i", "-"]
     if com_audio and info["tem_audio"]:
         enc_cmd += ["-i", str(origem), "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "192k"]
+    if enq.bw / enq.ow < 0.95:
+        # imagem ampliada (vertical/react a partir de horizontal): nitidez leve, como no pipeline antigo
+        enc_cmd += ["-vf", "unsharp=5:5:0.4:5:5:0.0"]
     enc_cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-g", str(fps_int),
                 "-keyint_min", str(fps_int), "-pix_fmt", "yuv420p", "-movflags", "+faststart",
                 "-shortest", str(destino)]
@@ -336,7 +339,7 @@ def montar_react(trab: Path, a, info: dict, trilha: Trilha, zoom: Zoom, destino:
             else:  # auto: abaixa sozinho quando você fala
                 filtros.append(f"{ra},volume=0.8[ra]")
                 filtros.append("[0:a]asplit=2[voz][sc]")
-                filtros.append("[ra][sc]sidechaincompress=threshold=0.012:ratio=12:attack=15:release=450[duck]")
+                filtros.append("[ra][sc]sidechaincompress=threshold=0.025:ratio=10:attack=20:release=350[duck]")
                 filtros.append("[voz][duck]amix=inputs=2:duration=first:normalize=0[a]")
             mapa_a = ["-map", "[a]"]
         fps = str(info["fps_int"])

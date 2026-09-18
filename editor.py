@@ -222,8 +222,8 @@ def cmd_nome(a) -> None:
         formatos = (a.formatos or "horizontal").split(",")
         existentes = [str(C.caminho_final(nome, f)) for f in formatos if C.caminho_final(nome, f).exists()]
         print(json.dumps({"nome": nome, "existe": bool(existentes), "arquivos": existentes,
-                          "alternativa": C.proxima_versao_livre(nome, formatos[0]).stem.split("_editado")[0] + "-2"
-                          if existentes else None}, ensure_ascii=False))
+                          "alternativa": C.proxima_versao_livre(nome, formatos[0]).name if existentes else None},
+                         ensure_ascii=False))
         return
     est = C.ler_estado(vid)
     print(est.get("nome_final") or sugerir_nome(vid))

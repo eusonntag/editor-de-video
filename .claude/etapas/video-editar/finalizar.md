@@ -18,7 +18,7 @@ Se existir:
 Já existe um vídeo chamado {nome}_editado.mp4.
 
 1. Substituir
-2. Salvar como {nome}-2
+2. Salvar como {alternativa, ex.: nome_editado-2.mp4}
 
 Digite o número:
 ```

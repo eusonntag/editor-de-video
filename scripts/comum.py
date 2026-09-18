@@ -31,6 +31,10 @@ CONFIG = RAIZ / "config"
 TOOLS = RAIZ / "tools"
 ENV = RAIZ / ".env"
 
+# o motion roda offline: sem telemetria, sem checar atualização e sem pedir feedback (vale para os subprocessos)
+for _var in ("HYPERFRAMES_NO_TELEMETRY", "DO_NOT_TRACK", "HYPERFRAMES_NO_UPDATE_CHECK", "HYPERFRAMES_NO_FEEDBACK"):
+    os.environ.setdefault(_var, "1")
+
 EXTENSOES_VIDEO = {".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi"}
 FORMATOS = ("horizontal", "vertical", "react")
 SUFIXO_FORMATO = {"horizontal": "", "vertical": "_vertical", "react": "_react"}
@@ -294,7 +298,7 @@ def limpar_nome(nome: str) -> str:
     n = INVALIDOS.sub("", nome.strip())
     n = re.sub(r"\s+", "-", n)
     n = re.sub(r"-{2,}", "-", n).strip("-.")
-    for suf in ("_editado", ".mp4"):
+    for suf in (".mp4", ".mov", "_editado_vertical", "_editado_react", "_editado"):
         if n.lower().endswith(suf):
             n = n[: -len(suf)]
     if n.upper() in {"CON", "PRN", "AUX", "NUL"} or re.fullmatch(r"(?i)(COM|LPT)\d", n):

@@ -8,7 +8,7 @@ model: opus
 # Formato react
 
 1. **Vídeo** (a sua fala): `.claude/etapas/escolher-video.md`. Precisa do corte; se não tiver, faça antes (`/video-cortar` embutido: transcrever + cortar).
-2. **Anúncio**: `🔍 Próximo passo: montar o react ({N} passos). Tempo estimado: {react 1,2× D + legenda + motion se houver}.`
+2. **Anúncio**: `🔍 Próximo passo: montar o react ({N} passos). Tempo estimado: {react 2× D + legenda + motion se houver}.`
 3. **Montagem**: `.claude/etapas/video-editar/react.md`.
 4. **Motion** (opcional): `Quer animações na parte da referência? 1. Sim / 2. Não` → sim: `.claude/etapas/video-editar/motion.md` com `--formato react`.
 5. **Legenda**: `.claude/etapas/video-editar/legendar.md` com `--formato react` (fica na emenda automaticamente).
