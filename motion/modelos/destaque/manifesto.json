@@ -1,0 +1,26 @@
+{
+  "tipo": "destaque",
+  "nome": "Frase em destaque / citação",
+  "uso": "Uma frase forte, uma citação ou a conclusão do raciocínio.",
+  "duracao_minima": 3.0,
+  "campos": {
+    "frase": {
+      "obrigatorio": true,
+      "exemplo": "Quem não aparece, não vende."
+    },
+    "autor": {
+      "exemplo": "Cristiano"
+    },
+    "destaque": {
+      "exemplo": "não vende",
+      "obs": "parte da frase que ganha a cor de destaque"
+    }
+  },
+  "animacao": "aspas entram com mola, frase revela palavra a palavra",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

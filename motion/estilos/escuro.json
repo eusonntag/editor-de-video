@@ -1,0 +1,15 @@
+{
+  "id": "escuro",
+  "nome": "Escuro elegante",
+  "descricao": "Vidro escuro translúcido, texto claro e destaque amarelo. Sóbrio, combina com quase tudo.",
+  "fontes": {"titulo": ["Inter", "Inter-900.ttf", 900], "texto": ["Inter", "Inter-700.ttf", 700], "apoio": ["Inter", "Inter-400.ttf", 400]},
+  "vars": {
+    "--bg": "rgba(14,14,18,.82)", "--texto": "#f7f5f0", "--suave": "#c9c4b8",
+    "--destaque": "#ffd400", "--destaque-2": "#4ade80", "--destaque-3": "#fb923c", "--sobre-destaque": "#111111",
+    "--borda": "2px solid rgba(255,255,255,.10)", "--raio": "26px", "--sombra": "0 30px 80px -20px rgba(0,0,0,.6)",
+    "--caixinha": "rgba(255,255,255,.08)", "--kicker-espaco": ".16em", "--desfoque": "blur(10px)"
+  },
+  "kicker_maiusculas": true,
+  "animacao": {"entrada": "power3.out", "mola": "back.out(1.8)", "duracao": 0.5, "deslocamento": 60},
+  "icones": "duotone"
+}

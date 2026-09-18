@@ -1,0 +1,33 @@
+{
+  "tipo": "apresentacao",
+  "nome": "Apresentação",
+  "uso": "Quem está falando: nome e @ no começo do vídeo.",
+  "duracao_minima": 2.5,
+  "campos": {
+    "nome": {
+      "obrigatorio": true,
+      "exemplo": "Cristiano"
+    },
+    "kicker": {
+      "padrao": "Me chamo",
+      "exemplo": "Prazer, eu sou"
+    },
+    "subtitulo": {
+      "exemplo": "testando um projeto no Claude"
+    },
+    "arroba": {
+      "padrao": "arroba da marca, se houver",
+      "exemplo": "@cristiano"
+    },
+    "palavra": {
+      "obs": "palavra falada em que o nome aparece (ou em, em segundos)"
+    }
+  },
+  "animacao": "vidro entra pela lateral, nome letra a letra, fio de destaque cresce, subtítulo sobe",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

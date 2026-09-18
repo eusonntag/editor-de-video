@@ -1,0 +1,2 @@
+# Transcrição no próprio computador (opcional; ~200 MB + modelo de ~1,5 GB baixado na primeira vez)
+faster-whisper>=1.0,<2

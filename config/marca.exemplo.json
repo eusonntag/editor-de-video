@@ -1,0 +1,25 @@
+{
+  "_obs": "Copie para config/marca.json (o /video-marca faz isso por você). Campos vazios usam o estilo escolhido.",
+  "nome": "Seu Nome",
+  "arroba": "@seuperfil",
+  "cores": {
+    "destaque": "#c4ff5e",
+    "secundaria": "",
+    "fundo_card": ""
+  },
+  "fonte_titulo": "",
+  "logo": "",
+  "motion": {
+    "estilo": "escuro",
+    "icones": "duotone"
+  },
+  "legenda": {
+    "estilo": "dinamica",
+    "cor": "#FFD400",
+    "fonte": "",
+    "cor_caixa": ""
+  },
+  "edicao": {
+    "estilo": "dinamica"
+  }
+}

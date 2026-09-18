@@ -1,0 +1,14 @@
+{
+  "name": "editor-de-video",
+  "private": true,
+  "description": "Editor de vídeo guiado pelo Claude Code: corte, zooms, motion (HyperFrames) e legendas",
+  "dependencies": {
+    "@phosphor-icons/core": "^2.1.1",
+    "gsap": "^3.15.0",
+    "hyperframes": "^0.8.47",
+    "puppeteer-core": "^25.11.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

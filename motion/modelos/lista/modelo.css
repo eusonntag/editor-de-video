@@ -1,0 +1,11 @@
+{{card}} .itens { margin-top: calc(26px * var(--k)); display: flex; flex-direction: column; gap: calc(24px * var(--k)); }
+{{card}} .item { display: flex; align-items: center; gap: calc(18px * var(--k)); font-size: calc(38px * var(--k)); font-weight: 700; line-height: 1.15; }
+{{card}} .check { width: calc(58px * var(--k)); height: calc(58px * var(--k)); flex: none; border-radius: calc(14px * var(--k));
+  background: var(--caixinha); border: calc(3px * var(--k)) solid color-mix(in srgb, var(--texto) 25%, transparent);
+  display: flex; align-items: center; justify-content: center; }
+{{card}} .check svg { width: 66%; height: 66%; }
+{{card}} .check path { fill: none; stroke: var(--destaque-2); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+{{card}}.compacto .itens { flex-direction: row; flex-wrap: wrap; gap: calc(14px * var(--k)); margin-top: calc(16px * var(--k)); }
+{{card}}.compacto .item { font-size: calc(32px * var(--k)); padding: calc(10px * var(--k)) calc(18px * var(--k)) calc(10px * var(--k)) calc(10px * var(--k));
+  border-radius: 999px; background: var(--caixinha); gap: calc(10px * var(--k)); }
+{{card}}.compacto .check { width: calc(40px * var(--k)); height: calc(40px * var(--k)); border-radius: 50%; }

@@ -1,0 +1,8 @@
+# Bibliotecas Python do editor (instaladas no .venv por: editor.py instalar)
+numpy>=1.26,<3
+opencv-python-headless>=4.8,<5
+requests>=2.31,<3
+pillow>=10,<13
+librosa>=0.10,<2
+matplotlib>=3.8,<4
+soundfile>=0.12,<1

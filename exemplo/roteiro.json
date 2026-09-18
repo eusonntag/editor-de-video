@@ -1,0 +1,18 @@
+{
+ "_obs": "Roteiro do vídeo de exemplo. 'de'/'ate' são palavras faladas: o scripts/exemplo.py troca por inicio/fim na linha do tempo cortada.",
+ "estilo": null,
+ "icones": null,
+ "cards": [
+  {"id": "card-01", "tipo": "titulo", "de": "Olá!", "ate": "editor.", "icone": "play-circle", "emoji": "▶️",
+   "campos": {"kicker": "Teste do editor", "titulo": "Vídeo de exemplo", "destaque": "exemplo", "palavra": "exemplo"}},
+  {"id": "card-02", "tipo": "lista", "de": "ele", "ate": "gravação.", "icone": "scissors", "emoji": "✂️",
+   "campos": {"titulo": "O corte tira", "itens": [{"texto": "As pausas", "palavra": "pausas"},
+                                                  {"texto": "Os erros", "palavra": "erros"}]}},
+  {"id": "card-03", "tipo": "passos", "de": "Depois", "ate": "legenda.", "icone": "list-numbers", "emoji": "🔢",
+   "campos": {"titulo": "Depois coloca", "passos": [{"texto": "Zoom", "palavra": "zoom"},
+                                                    {"texto": "Animações", "palavra": "animações"},
+                                                    {"texto": "Legenda", "palavra": "legenda"}]}},
+  {"id": "card-04", "tipo": "palavra", "de": "Pronto!", "ate": "funcionando.", "icone": "check-circle", "emoji": "✅",
+   "campos": {"palavra": "Pronto", "apoio": "seu editor está funcionando", "falada": "Pronto"}}
+ ]
+}

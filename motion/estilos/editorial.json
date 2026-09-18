@@ -1,0 +1,16 @@
+{
+  "id": "editorial",
+  "nome": "Editorial",
+  "descricao": "Papel creme, título serifado e fio vermelho. Cara de revista e documentário, transmite autoridade.",
+  "fontes": {"titulo": ["Playfair Display Black", "PlayfairDisplay-900.ttf", 900], "texto": ["Inter", "Inter-700.ttf", 700], "apoio": ["Inter", "Inter-400.ttf", 400]},
+  "vars": {
+    "--bg": "rgba(250,246,238,.96)", "--texto": "#1b1b1b", "--suave": "#6b645a",
+    "--destaque": "#b3261e", "--destaque-2": "#1f6f50", "--destaque-3": "#c7771a", "--sobre-destaque": "#ffffff",
+    "--borda": "none", "--raio": "4px", "--sombra": "0 18px 40px -16px rgba(0,0,0,.45)",
+    "--caixinha": "rgba(27,27,27,.06)", "--kicker-espaco": ".22em", "--desfoque": "none"
+  },
+  "kicker_maiusculas": true,
+  "fio_lateral": true,
+  "animacao": {"entrada": "power2.out", "mola": "power3.out", "duracao": 0.7, "deslocamento": 30},
+  "icones": "linha"
+}

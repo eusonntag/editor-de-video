@@ -1,0 +1,28 @@
+# segredos e configurações pessoais
+.env
+config/marca.json
+config/logo.*
+.claude/settings.local.json
+
+# instalados por "editor.py instalar"
+.venv/
+node_modules/
+tools/
+motion/icones/indice.json
+
+# vídeos do aluno (a estrutura de pastas fica no repositório)
+videos/.trabalho/
+videos/Editados/*
+!videos/Editados/.gitkeep
+videos/Para Editar/*
+!videos/Para Editar/.gitkeep
+!videos/Para Editar/referencias/
+videos/Para Editar/referencias/*
+!videos/Para Editar/referencias/.gitkeep
+
+# sistema
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini

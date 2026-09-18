@@ -1,0 +1,29 @@
+/* Base de todos os cards. Variáveis vêm do estilo (motion/estilos/*.json) + marca.
+   --k = escala do card (1 = card lateral de 600 px no 1920x1080). */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000;
+  font-family: var(--fonte-texto), ui-sans-serif, system-ui, sans-serif; }
+#stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.video-wrapper { position: absolute; left: 0; top: 0; overflow: hidden; }
+.video-wrapper video { width: 100%; height: 100%; object-fit: cover; }
+.card-host { position: absolute; left: 0; top: 0; pointer-events: none; overflow: hidden; }
+.card-host .card { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.fit { position: absolute; }
+.root { position: relative; padding: calc(38px * var(--k)) calc(44px * var(--k));
+  background: var(--bg); color: var(--texto); border-radius: var(--raio); border: var(--borda);
+  box-shadow: var(--sombra); backdrop-filter: var(--desfoque); overflow: hidden; }
+.root.fio { padding-left: calc(58px * var(--k)); }
+.root.fio::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: calc(8px * var(--k)); background: var(--destaque); }
+.kicker { font-family: var(--fonte-texto); font-weight: 700; font-size: calc(24px * var(--k)); letter-spacing: var(--kicker-espaco);
+  text-transform: var(--kicker-caixa); color: var(--suave); line-height: 1.2; }
+.titulo-fonte { font-family: var(--fonte-titulo); font-weight: 900; }
+.char, .palavra-anim { display: inline-block; }
+.destaque-cor { color: var(--destaque); }
+.icone-box { display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: calc(78px * var(--k)); height: calc(78px * var(--k)); border-radius: calc(20px * var(--k));
+  background: var(--caixinha); color: var(--destaque); }
+.icone-box .icone { width: 64%; height: 64%; }
+.icone-box .icone path[opacity] { fill: var(--destaque); opacity: .35; }
+.icone-box .emoji, .pilula .emoji { font-size: calc(46px * var(--k)); line-height: 1; }
+.cabeca { display: flex; align-items: center; gap: calc(22px * var(--k)); }
+.cabeca .kicker { flex: 1; }

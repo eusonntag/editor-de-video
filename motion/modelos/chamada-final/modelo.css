@@ -1,0 +1,8 @@
+{{card}} .root { text-align: center; }
+{{card}} .texto-cta { font-size: calc(56px * var(--k)); line-height: 1.1; }
+{{card}} .pilula { display: inline-flex; align-items: center; gap: calc(14px * var(--k)); margin-top: calc(26px * var(--k));
+  padding: calc(16px * var(--k)) calc(34px * var(--k)); border-radius: 999px; background: var(--destaque); color: var(--sobre-destaque);
+  font-size: calc(42px * var(--k)); font-weight: 900; }
+{{card}} .pilula .icone { width: calc(44px * var(--k)); height: calc(44px * var(--k)); }
+{{card}} .pilula .emoji { font-size: calc(40px * var(--k)); }
+{{card}} .logo { max-width: 60%; max-height: calc(110px * var(--k)); margin: 0 auto calc(18px * var(--k)); display: block; }

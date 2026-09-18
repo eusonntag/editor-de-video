@@ -1,0 +1,5 @@
+{{card}} .root { text-align: center; }
+{{card}} .grande { font-size: calc(128px * var(--k)); line-height: 1; letter-spacing: -.01em; text-transform: uppercase; }
+{{card}} .sublinhado { height: calc(12px * var(--k)); width: 0; margin: calc(18px * var(--k)) auto 0; background: var(--destaque); border-radius: 999px; }
+{{card}} .apoio { font-size: calc(32px * var(--k)); color: var(--suave); margin-top: calc(18px * var(--k)); }
+{{card}} .icone-box { margin-bottom: calc(18px * var(--k)); }

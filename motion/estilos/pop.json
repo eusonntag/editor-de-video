@@ -1,0 +1,15 @@
+{
+  "id": "pop",
+  "nome": "Colorido pop",
+  "descricao": "Cartões coloridos com contorno preto e sombra dura, fonte arredondada e animação com mola. Divertido, cara de Reels.",
+  "fontes": {"titulo": ["Poppins Black", "Poppins-900.ttf", 900], "texto": ["Poppins", "Poppins-700.ttf", 700], "apoio": ["Poppins", "Poppins-700.ttf", 700]},
+  "vars": {
+    "--bg": "#7c3aed", "--texto": "#ffffff", "--suave": "#ede4ff",
+    "--destaque": "#ffe14d", "--destaque-2": "#22d3ee", "--destaque-3": "#ff5c8a", "--sobre-destaque": "#111111",
+    "--borda": "4px solid #111111", "--raio": "34px", "--sombra": "10px 10px 0 #111111",
+    "--caixinha": "rgba(255,255,255,.18)", "--kicker-espaco": ".08em", "--desfoque": "none"
+  },
+  "kicker_maiusculas": true,
+  "animacao": {"entrada": "back.out(1.6)", "mola": "elastic.out(1, 0.55)", "duracao": 0.6, "deslocamento": 90},
+  "icones": "preenchido"
+}

@@ -1,0 +1,1387 @@
+{
+  "_obs": "Mapa português → termos em inglês usados na busca local de ícones (Phosphor). Chaves sem acento e minúsculas.",
+  "venda": [
+    "sales",
+    "shopping-cart",
+    "handshake",
+    "tag",
+    "storefront"
+  ],
+  "vendas": [
+    "sales",
+    "chart-line-up",
+    "shopping-cart",
+    "handshake",
+    "trend-up"
+  ],
+  "vender": [
+    "sales",
+    "handshake",
+    "storefront",
+    "tag"
+  ],
+  "dinheiro": [
+    "money",
+    "currency-dollar",
+    "coins",
+    "wallet",
+    "bank"
+  ],
+  "real": [
+    "money",
+    "currency-circle-dollar",
+    "coins"
+  ],
+  "reais": [
+    "money",
+    "currency-circle-dollar",
+    "coins"
+  ],
+  "lucro": [
+    "trend-up",
+    "chart-line-up",
+    "money",
+    "coins"
+  ],
+  "faturamento": [
+    "chart-line-up",
+    "money",
+    "trend-up",
+    "receipt"
+  ],
+  "preco": [
+    "tag",
+    "currency-dollar",
+    "price"
+  ],
+  "pagamento": [
+    "credit-card",
+    "wallet",
+    "money"
+  ],
+  "investimento": [
+    "piggy-bank",
+    "chart-line-up",
+    "coins",
+    "bank"
+  ],
+  "economia": [
+    "piggy-bank",
+    "coins",
+    "wallet"
+  ],
+  "cliente": [
+    "user",
+    "users",
+    "handshake",
+    "smiley"
+  ],
+  "clientes": [
+    "users",
+    "users-three",
+    "user-circle"
+  ],
+  "pessoa": [
+    "user",
+    "person"
+  ],
+  "pessoas": [
+    "users",
+    "users-three"
+  ],
+  "equipe": [
+    "users-three",
+    "users",
+    "handshake"
+  ],
+  "time": [
+    "users-three",
+    "clock"
+  ],
+  "publico": [
+    "users-three",
+    "megaphone",
+    "eye"
+  ],
+  "seguidores": [
+    "users",
+    "heart",
+    "user-plus"
+  ],
+  "seguir": [
+    "user-plus",
+    "bell",
+    "heart"
+  ],
+  "curtir": [
+    "heart",
+    "thumbs-up"
+  ],
+  "compartilhar": [
+    "share-network",
+    "share",
+    "paper-plane-tilt"
+  ],
+  "comentar": [
+    "chat-circle",
+    "chat-teardrop",
+    "chats"
+  ],
+  "comentario": [
+    "chat-circle",
+    "chat-teardrop-text"
+  ],
+  "mensagem": [
+    "chat-circle-dots",
+    "envelope",
+    "paper-plane-tilt"
+  ],
+  "whatsapp": [
+    "whatsapp-logo",
+    "chat-circle-dots"
+  ],
+  "instagram": [
+    "instagram-logo",
+    "camera"
+  ],
+  "youtube": [
+    "youtube-logo",
+    "play"
+  ],
+  "tiktok": [
+    "tiktok-logo",
+    "music-notes"
+  ],
+  "email": [
+    "envelope",
+    "at",
+    "paper-plane"
+  ],
+  "link": [
+    "link",
+    "globe"
+  ],
+  "site": [
+    "globe",
+    "browser",
+    "link"
+  ],
+  "video": [
+    "video-camera",
+    "film-strip",
+    "play",
+    "video"
+  ],
+  "videos": [
+    "video-camera",
+    "film-strip",
+    "play-circle"
+  ],
+  "gravar": [
+    "record",
+    "video-camera",
+    "microphone"
+  ],
+  "editar": [
+    "scissors",
+    "pencil-simple",
+    "film-slate"
+  ],
+  "edicao": [
+    "scissors",
+    "film-slate",
+    "sliders"
+  ],
+  "cortar": [
+    "scissors"
+  ],
+  "corte": [
+    "scissors"
+  ],
+  "legenda": [
+    "subtitles",
+    "closed-captioning",
+    "text-aa"
+  ],
+  "legendas": [
+    "subtitles",
+    "closed-captioning",
+    "text-aa"
+  ],
+  "texto": [
+    "text-aa",
+    "text-t",
+    "article"
+  ],
+  "imagem": [
+    "image",
+    "images",
+    "camera"
+  ],
+  "imagens": [
+    "images",
+    "image",
+    "image-square"
+  ],
+  "foto": [
+    "camera",
+    "image"
+  ],
+  "animacao": [
+    "sparkle",
+    "magic-wand",
+    "film-strip"
+  ],
+  "animacoes": [
+    "sparkle",
+    "magic-wand",
+    "film-strip"
+  ],
+  "motion": [
+    "sparkle",
+    "magic-wand",
+    "shooting-star"
+  ],
+  "musica": [
+    "music-notes",
+    "headphones"
+  ],
+  "audio": [
+    "speaker-high",
+    "microphone",
+    "waveform"
+  ],
+  "microfone": [
+    "microphone"
+  ],
+  "camera": [
+    "camera",
+    "video-camera"
+  ],
+  "celular": [
+    "device-mobile",
+    "phone"
+  ],
+  "telefone": [
+    "phone",
+    "phone-call"
+  ],
+  "computador": [
+    "desktop",
+    "laptop",
+    "monitor"
+  ],
+  "internet": [
+    "globe",
+    "wifi-high",
+    "cloud"
+  ],
+  "nuvem": [
+    "cloud"
+  ],
+  "ia": [
+    "robot",
+    "brain",
+    "sparkle",
+    "cpu"
+  ],
+  "inteligencia": [
+    "brain",
+    "lightbulb",
+    "robot"
+  ],
+  "artificial": [
+    "robot",
+    "cpu",
+    "sparkle"
+  ],
+  "robo": [
+    "robot"
+  ],
+  "claude": [
+    "sparkle",
+    "robot",
+    "brain"
+  ],
+  "automacao": [
+    "gear",
+    "robot",
+    "lightning"
+  ],
+  "automatico": [
+    "lightning",
+    "gear",
+    "robot"
+  ],
+  "ferramenta": [
+    "wrench",
+    "toolbox",
+    "hammer"
+  ],
+  "ferramentas": [
+    "toolbox",
+    "wrench",
+    "gear"
+  ],
+  "projeto": [
+    "folder",
+    "kanban",
+    "rocket"
+  ],
+  "codigo": [
+    "code",
+    "terminal-window",
+    "brackets-curly"
+  ],
+  "programar": [
+    "code",
+    "terminal-window"
+  ],
+  "aplicativo": [
+    "app-window",
+    "device-mobile"
+  ],
+  "dica": [
+    "lightbulb",
+    "star",
+    "info"
+  ],
+  "dicas": [
+    "lightbulb",
+    "list-checks",
+    "star"
+  ],
+  "ideia": [
+    "lightbulb",
+    "brain"
+  ],
+  "ideias": [
+    "lightbulb",
+    "brain",
+    "sparkle"
+  ],
+  "segredo": [
+    "lock-key",
+    "key",
+    "eye-slash"
+  ],
+  "chave": [
+    "key"
+  ],
+  "seguranca": [
+    "shield-check",
+    "lock"
+  ],
+  "protecao": [
+    "shield-check",
+    "shield"
+  ],
+  "erro": [
+    "x-circle",
+    "warning",
+    "bug"
+  ],
+  "erros": [
+    "x-circle",
+    "warning",
+    "bug"
+  ],
+  "errado": [
+    "x-circle",
+    "thumbs-down"
+  ],
+  "certo": [
+    "check-circle",
+    "thumbs-up"
+  ],
+  "correto": [
+    "check-circle",
+    "seal-check"
+  ],
+  "atencao": [
+    "warning",
+    "warning-circle",
+    "eye"
+  ],
+  "cuidado": [
+    "warning",
+    "hand-palm"
+  ],
+  "perigo": [
+    "warning-octagon",
+    "skull"
+  ],
+  "proibido": [
+    "prohibit",
+    "x-circle"
+  ],
+  "nao": [
+    "x-circle",
+    "prohibit"
+  ],
+  "sim": [
+    "check-circle",
+    "thumbs-up"
+  ],
+  "pergunta": [
+    "question",
+    "chat-circle-dots"
+  ],
+  "duvida": [
+    "question",
+    "seal-question"
+  ],
+  "resposta": [
+    "chat-circle-text",
+    "check-circle"
+  ],
+  "problema": [
+    "warning",
+    "puzzle-piece",
+    "bug"
+  ],
+  "solucao": [
+    "puzzle-piece",
+    "lightbulb",
+    "check-circle"
+  ],
+  "resultado": [
+    "trophy",
+    "chart-bar",
+    "target"
+  ],
+  "resultados": [
+    "chart-bar",
+    "trophy",
+    "trend-up"
+  ],
+  "meta": [
+    "target",
+    "flag-checkered"
+  ],
+  "objetivo": [
+    "target",
+    "flag"
+  ],
+  "foco": [
+    "target",
+    "crosshair",
+    "eye"
+  ],
+  "sucesso": [
+    "trophy",
+    "star",
+    "crown"
+  ],
+  "vitoria": [
+    "trophy",
+    "medal"
+  ],
+  "premio": [
+    "trophy",
+    "medal",
+    "gift"
+  ],
+  "presente": [
+    "gift"
+  ],
+  "gratis": [
+    "gift",
+    "tag",
+    "hand-heart"
+  ],
+  "bonus": [
+    "gift",
+    "star",
+    "plus-circle"
+  ],
+  "oferta": [
+    "tag",
+    "percent",
+    "seal-percent"
+  ],
+  "desconto": [
+    "percent",
+    "tag",
+    "seal-percent"
+  ],
+  "porcentagem": [
+    "percent"
+  ],
+  "promocao": [
+    "megaphone",
+    "tag",
+    "percent"
+  ],
+  "marketing": [
+    "megaphone",
+    "target",
+    "chart-line-up"
+  ],
+  "anuncio": [
+    "megaphone",
+    "speaker-high"
+  ],
+  "anuncios": [
+    "megaphone",
+    "target"
+  ],
+  "trafego": [
+    "target",
+    "cursor-click",
+    "chart-line-up"
+  ],
+  "clique": [
+    "cursor-click",
+    "hand-pointing"
+  ],
+  "crescimento": [
+    "trend-up",
+    "chart-line-up",
+    "plant"
+  ],
+  "crescer": [
+    "trend-up",
+    "plant",
+    "rocket"
+  ],
+  "aumentar": [
+    "trend-up",
+    "arrow-fat-up",
+    "plus"
+  ],
+  "diminuir": [
+    "trend-down",
+    "arrow-fat-down",
+    "minus"
+  ],
+  "queda": [
+    "trend-down",
+    "chart-line-down"
+  ],
+  "grafico": [
+    "chart-bar",
+    "chart-line",
+    "chart-pie"
+  ],
+  "dados": [
+    "database",
+    "chart-bar",
+    "table"
+  ],
+  "numero": [
+    "hash",
+    "number-circle-one"
+  ],
+  "numeros": [
+    "hash",
+    "chart-bar"
+  ],
+  "tempo": [
+    "clock",
+    "hourglass",
+    "timer"
+  ],
+  "rapido": [
+    "lightning",
+    "rocket",
+    "timer"
+  ],
+  "velocidade": [
+    "lightning",
+    "gauge",
+    "rocket"
+  ],
+  "lento": [
+    "hourglass",
+    "clock"
+  ],
+  "hoje": [
+    "calendar-check",
+    "sun"
+  ],
+  "amanha": [
+    "calendar-plus",
+    "sun-horizon"
+  ],
+  "dia": [
+    "sun",
+    "calendar"
+  ],
+  "dias": [
+    "calendar",
+    "calendar-blank"
+  ],
+  "semana": [
+    "calendar",
+    "calendar-dots"
+  ],
+  "mes": [
+    "calendar"
+  ],
+  "ano": [
+    "calendar",
+    "calendar-star"
+  ],
+  "agenda": [
+    "calendar",
+    "calendar-check"
+  ],
+  "prazo": [
+    "hourglass",
+    "calendar-x",
+    "timer"
+  ],
+  "urgente": [
+    "alarm",
+    "warning",
+    "lightning"
+  ],
+  "agora": [
+    "lightning",
+    "clock-countdown",
+    "bell-ringing"
+  ],
+  "passo": [
+    "footprints",
+    "stairs",
+    "number-circle-one"
+  ],
+  "passos": [
+    "footprints",
+    "stairs",
+    "list-numbers"
+  ],
+  "etapa": [
+    "stairs",
+    "list-numbers"
+  ],
+  "lista": [
+    "list-checks",
+    "list-bullets"
+  ],
+  "checklist": [
+    "list-checks",
+    "check-square"
+  ],
+  "tarefa": [
+    "check-square",
+    "clipboard-text"
+  ],
+  "plano": [
+    "map-trifold",
+    "clipboard-text",
+    "strategy"
+  ],
+  "estrategia": [
+    "strategy",
+    "chess-knight",
+    "target"
+  ],
+  "metodo": [
+    "flow-arrow",
+    "list-numbers",
+    "strategy"
+  ],
+  "processo": [
+    "flow-arrow",
+    "arrows-clockwise",
+    "gear"
+  ],
+  "caminho": [
+    "path",
+    "map-trifold",
+    "signpost"
+  ],
+  "inicio": [
+    "play",
+    "flag",
+    "rocket-launch"
+  ],
+  "comecar": [
+    "play",
+    "rocket-launch",
+    "flag"
+  ],
+  "fim": [
+    "flag-checkered",
+    "stop"
+  ],
+  "final": [
+    "flag-checkered",
+    "check-circle"
+  ],
+  "lancamento": [
+    "rocket-launch",
+    "rocket"
+  ],
+  "foguete": [
+    "rocket",
+    "rocket-launch"
+  ],
+  "curso": [
+    "graduation-cap",
+    "book-open",
+    "chalkboard-teacher"
+  ],
+  "aula": [
+    "chalkboard-teacher",
+    "student",
+    "book-open"
+  ],
+  "aprender": [
+    "graduation-cap",
+    "brain",
+    "book-open"
+  ],
+  "ensinar": [
+    "chalkboard-teacher",
+    "student"
+  ],
+  "livro": [
+    "book",
+    "book-open"
+  ],
+  "ebook": [
+    "book-open-text",
+    "device-tablet"
+  ],
+  "estudo": [
+    "book-open",
+    "student",
+    "notebook"
+  ],
+  "conhecimento": [
+    "brain",
+    "book-open",
+    "lightbulb"
+  ],
+  "saude": [
+    "heartbeat",
+    "first-aid",
+    "heart"
+  ],
+  "corpo": [
+    "person-simple",
+    "barbell"
+  ],
+  "treino": [
+    "barbell",
+    "person-simple-run"
+  ],
+  "comida": [
+    "fork-knife",
+    "hamburger",
+    "bowl-food"
+  ],
+  "casa": [
+    "house",
+    "house-line"
+  ],
+  "empresa": [
+    "buildings",
+    "briefcase",
+    "storefront"
+  ],
+  "negocio": [
+    "briefcase",
+    "storefront",
+    "handshake"
+  ],
+  "negocios": [
+    "briefcase",
+    "chart-line-up",
+    "handshake"
+  ],
+  "loja": [
+    "storefront",
+    "shopping-bag"
+  ],
+  "produto": [
+    "package",
+    "cube",
+    "shopping-bag"
+  ],
+  "produtos": [
+    "package",
+    "shopping-bag",
+    "cube"
+  ],
+  "entrega": [
+    "truck",
+    "package"
+  ],
+  "trabalho": [
+    "briefcase",
+    "laptop",
+    "desktop"
+  ],
+  "emprego": [
+    "briefcase",
+    "identification-card"
+  ],
+  "carreira": [
+    "briefcase",
+    "stairs",
+    "trend-up"
+  ],
+  "viagem": [
+    "airplane",
+    "suitcase",
+    "map-trifold"
+  ],
+  "mundo": [
+    "globe-hemisphere-west",
+    "globe"
+  ],
+  "brasil": [
+    "globe-hemisphere-west",
+    "flag"
+  ],
+  "amor": [
+    "heart",
+    "hand-heart"
+  ],
+  "feliz": [
+    "smiley",
+    "confetti"
+  ],
+  "triste": [
+    "smiley-sad"
+  ],
+  "raiva": [
+    "smiley-angry",
+    "fire"
+  ],
+  "medo": [
+    "ghost",
+    "smiley-nervous"
+  ],
+  "fogo": [
+    "fire",
+    "flame"
+  ],
+  "energia": [
+    "lightning",
+    "battery-charging",
+    "fire"
+  ],
+  "forca": [
+    "barbell",
+    "lightning",
+    "hand-fist"
+  ],
+  "coragem": [
+    "hand-fist",
+    "shield",
+    "fire"
+  ],
+  "confianca": [
+    "shield-check",
+    "handshake",
+    "seal-check"
+  ],
+  "qualidade": [
+    "seal-check",
+    "star",
+    "medal"
+  ],
+  "melhor": [
+    "star",
+    "crown",
+    "trophy"
+  ],
+  "pior": [
+    "thumbs-down",
+    "trend-down"
+  ],
+  "top": [
+    "crown",
+    "star",
+    "fire"
+  ],
+  "novo": [
+    "sparkle",
+    "seal",
+    "star-four"
+  ],
+  "novidade": [
+    "sparkle",
+    "megaphone",
+    "bell-ringing"
+  ],
+  "noticia": [
+    "newspaper",
+    "megaphone"
+  ],
+  "alerta": [
+    "bell-ringing",
+    "warning"
+  ],
+  "notificacao": [
+    "bell",
+    "bell-ringing"
+  ],
+  "configurar": [
+    "gear",
+    "sliders"
+  ],
+  "configuracao": [
+    "gear",
+    "sliders-horizontal"
+  ],
+  "ajuste": [
+    "sliders",
+    "wrench"
+  ],
+  "ajustes": [
+    "sliders-horizontal",
+    "gear"
+  ],
+  "busca": [
+    "magnifying-glass"
+  ],
+  "pesquisa": [
+    "magnifying-glass",
+    "binoculars"
+  ],
+  "analise": [
+    "magnifying-glass",
+    "chart-bar",
+    "microscope"
+  ],
+  "olhar": [
+    "eye",
+    "binoculars"
+  ],
+  "ver": [
+    "eye"
+  ],
+  "assistir": [
+    "eye",
+    "play",
+    "television"
+  ],
+  "ouvir": [
+    "ear",
+    "headphones"
+  ],
+  "falar": [
+    "microphone",
+    "chat-circle",
+    "megaphone"
+  ],
+  "conversa": [
+    "chats",
+    "chat-circle-dots"
+  ],
+  "reuniao": [
+    "users-three",
+    "video-conference",
+    "calendar"
+  ],
+  "chamada": [
+    "phone-call",
+    "video-conference"
+  ],
+  "contrato": [
+    "file-text",
+    "signature",
+    "handshake"
+  ],
+  "documento": [
+    "file-text",
+    "clipboard-text"
+  ],
+  "arquivo": [
+    "file",
+    "folder"
+  ],
+  "pasta": [
+    "folder",
+    "folder-open"
+  ],
+  "salvar": [
+    "floppy-disk",
+    "download-simple"
+  ],
+  "baixar": [
+    "download-simple",
+    "arrow-down"
+  ],
+  "enviar": [
+    "paper-plane-tilt",
+    "upload-simple"
+  ],
+  "subir": [
+    "upload-simple",
+    "arrow-up"
+  ],
+  "compra": [
+    "shopping-cart",
+    "shopping-bag",
+    "credit-card"
+  ],
+  "comprar": [
+    "shopping-cart",
+    "shopping-bag"
+  ],
+  "carrinho": [
+    "shopping-cart"
+  ],
+  "estrela": [
+    "star"
+  ],
+  "coroa": [
+    "crown"
+  ],
+  "diamante": [
+    "diamond",
+    "sketch-logo"
+  ],
+  "premium": [
+    "crown",
+    "diamond",
+    "star"
+  ],
+  "exclusivo": [
+    "crown",
+    "lock-key",
+    "seal-check"
+  ],
+  "comunidade": [
+    "users-three",
+    "globe",
+    "chats"
+  ],
+  "grupo": [
+    "users-three",
+    "users"
+  ],
+  "rede": [
+    "share-network",
+    "graph",
+    "users-three"
+  ],
+  "conexao": [
+    "plugs-connected",
+    "link",
+    "share-network"
+  ],
+  "parceria": [
+    "handshake",
+    "users"
+  ],
+  "ajuda": [
+    "lifebuoy",
+    "hand-heart",
+    "question"
+  ],
+  "suporte": [
+    "headset",
+    "lifebuoy"
+  ],
+  "garantia": [
+    "shield-check",
+    "seal-check"
+  ],
+  "prova": [
+    "seal-check",
+    "certificate"
+  ],
+  "certificado": [
+    "certificate",
+    "medal"
+  ],
+  "depoimento": [
+    "quotes",
+    "chat-circle-text",
+    "star"
+  ],
+  "citacao": [
+    "quotes"
+  ],
+  "frase": [
+    "quotes",
+    "text-aa"
+  ],
+  "escrever": [
+    "pencil",
+    "pen-nib",
+    "note-pencil"
+  ],
+  "roteiro": [
+    "script",
+    "note-pencil",
+    "file-text"
+  ],
+  "historia": [
+    "book-open-text",
+    "chat-teardrop-text"
+  ],
+  "criativo": [
+    "palette",
+    "paint-brush",
+    "lightbulb"
+  ],
+  "design": [
+    "palette",
+    "pen-nib",
+    "paint-brush"
+  ],
+  "cor": [
+    "palette",
+    "paint-bucket",
+    "drop"
+  ],
+  "cores": [
+    "palette",
+    "rainbow"
+  ],
+  "marca": [
+    "seal",
+    "crown",
+    "fingerprint"
+  ],
+  "identidade": [
+    "fingerprint",
+    "identification-card"
+  ],
+  "perfil": [
+    "user-circle",
+    "identification-card"
+  ],
+  "casal": [
+    "users",
+    "heart"
+  ],
+  "familia": [
+    "users-four",
+    "house-line"
+  ],
+  "crianca": [
+    "baby",
+    "smiley"
+  ],
+  "pet": [
+    "dog",
+    "cat",
+    "paw-print"
+  ],
+  "cachorro": [
+    "dog",
+    "paw-print"
+  ],
+  "gato": [
+    "cat"
+  ],
+  "sol": [
+    "sun"
+  ],
+  "lua": [
+    "moon"
+  ],
+  "noite": [
+    "moon-stars"
+  ],
+  "chuva": [
+    "cloud-rain"
+  ],
+  "planta": [
+    "plant",
+    "leaf",
+    "tree"
+  ],
+  "natureza": [
+    "tree",
+    "leaf",
+    "mountains"
+  ],
+  "casa-propria": [
+    "house",
+    "key"
+  ],
+  "carro": [
+    "car",
+    "car-profile"
+  ],
+  "mapa": [
+    "map-trifold",
+    "map-pin"
+  ],
+  "local": [
+    "map-pin"
+  ],
+  "endereco": [
+    "map-pin",
+    "house"
+  ],
+  "cidade": [
+    "buildings",
+    "city"
+  ],
+  "jogo": [
+    "game-controller",
+    "puzzle-piece"
+  ],
+  "diversao": [
+    "confetti",
+    "game-controller",
+    "smiley"
+  ],
+  "festa": [
+    "confetti",
+    "champagne"
+  ],
+  "celebrar": [
+    "confetti",
+    "champagne",
+    "trophy"
+  ],
+  "parabens": [
+    "confetti",
+    "trophy",
+    "hands-clapping"
+  ],
+  "obrigado": [
+    "hands-clapping",
+    "heart",
+    "hand-heart"
+  ],
+  "ola": [
+    "hand-waving",
+    "smiley"
+  ],
+  "oi": [
+    "hand-waving"
+  ],
+  "tchau": [
+    "hand-waving"
+  ],
+  "eu": [
+    "user",
+    "user-circle"
+  ],
+  "nome": [
+    "identification-badge",
+    "user-circle"
+  ],
+  "apresentacao": [
+    "hand-waving",
+    "user-circle",
+    "identification-badge"
+  ],
+  "testando": [
+    "flask",
+    "test-tube",
+    "check-circle"
+  ],
+  "teste": [
+    "flask",
+    "test-tube"
+  ],
+  "testar": [
+    "flask",
+    "test-tube"
+  ],
+  "experimento": [
+    "flask",
+    "atom"
+  ],
+  "funcao": [
+    "gear",
+    "function",
+    "puzzle-piece"
+  ],
+  "recurso": [
+    "puzzle-piece",
+    "star-four"
+  ],
+  "recursos": [
+    "puzzle-piece",
+    "squares-four"
+  ],
+  "facil": [
+    "thumbs-up",
+    "smiley",
+    "check-circle"
+  ],
+  "dificil": [
+    "mountains",
+    "warning"
+  ],
+  "simples": [
+    "check-circle",
+    "feather"
+  ],
+  "gratuito": [
+    "gift",
+    "hand-heart"
+  ],
+  "trocar": [
+    "arrows-left-right",
+    "swap"
+  ],
+  "mudar": [
+    "arrows-clockwise",
+    "swap"
+  ],
+  "mudanca": [
+    "arrows-clockwise",
+    "trend-up"
+  ],
+  "comparar": [
+    "scales",
+    "arrows-left-right"
+  ],
+  "versus": [
+    "scales",
+    "sword"
+  ],
+  "escolha": [
+    "signpost",
+    "list-checks"
+  ],
+  "decisao": [
+    "signpost",
+    "scales"
+  ],
+  "tres": [
+    "number-circle-three",
+    "number-three"
+  ],
+  "dois": [
+    "number-circle-two",
+    "number-two"
+  ],
+  "um": [
+    "number-circle-one",
+    "number-one"
+  ],
+  "quatro": [
+    "number-circle-four"
+  ],
+  "cinco": [
+    "number-circle-five"
+  ],
+  "animado": [
+    "sparkle",
+    "magic-wand",
+    "film-strip"
+  ],
+  "animada": [
+    "sparkle",
+    "magic-wand",
+    "film-strip"
+  ],
+  "animadas": [
+    "sparkle",
+    "magic-wand",
+    "film-strip"
+  ],
+  "animados": [
+    "sparkle",
+    "magic-wand",
+    "film-strip"
+  ]
+}

@@ -1,0 +1,9 @@
+{{card}} .passos { margin-top: calc(26px * var(--k)); display: flex; flex-direction: column; gap: calc(26px * var(--k)); position: relative; }
+{{card}} .passo { display: flex; align-items: center; gap: calc(20px * var(--k)); font-size: calc(36px * var(--k)); font-weight: 700; line-height: 1.15; position: relative; z-index: 1; }
+{{card}} .bola { width: calc(62px * var(--k)); height: calc(62px * var(--k)); flex: none; border-radius: 50%; background: var(--destaque);
+  color: var(--sobre-destaque); display: flex; align-items: center; justify-content: center; font-size: calc(32px * var(--k)); }
+{{card}} .fio-passos { position: absolute; left: calc(29px * var(--k)); top: calc(31px * var(--k)); width: calc(4px * var(--k)); height: 0;
+  background: color-mix(in srgb, var(--destaque) 55%, transparent); z-index: 0; }
+{{card}}.compacto .passos { flex-direction: row; gap: calc(18px * var(--k)); margin-top: calc(16px * var(--k)); }
+{{card}}.compacto .passo { flex-direction: column; align-items: flex-start; flex: 1; font-size: calc(30px * var(--k)); gap: calc(10px * var(--k)); }
+{{card}}.compacto .fio-passos { display: none; }

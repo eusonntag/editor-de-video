@@ -1,0 +1,31 @@
+{
+  "tipo": "passos",
+  "nome": "Passo a passo 1-2-3",
+  "uso": "Processo em etapas, método, ordem de ações. 2 a 4 passos.",
+  "duracao_minima": 3.0,
+  "campos": {
+    "titulo": {
+      "exemplo": "Como começar"
+    },
+    "passos": {
+      "obrigatorio": true,
+      "exemplo": [
+        {
+          "texto": "Grave o vídeo",
+          "palavra": "grave"
+        },
+        {
+          "texto": "Rode o editor",
+          "palavra": "rode"
+        }
+      ]
+    }
+  },
+  "animacao": "número em círculo pula, linha liga os passos, texto desliza no momento falado",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

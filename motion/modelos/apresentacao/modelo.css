@@ -1,0 +1,6 @@
+{{card}} .nome { font-size: calc(92px * var(--k)); line-height: 1; margin-top: calc(10px * var(--k)); }
+{{card}} .barra { height: calc(8px * var(--k)); width: 0; margin: calc(22px * var(--k)) 0 calc(24px * var(--k)); background: var(--destaque); border-radius: 4px; }
+{{card}} .sub { font-size: calc(34px * var(--k)); line-height: 1.25; color: var(--suave); }
+{{card}} .arroba { display: inline-block; margin-top: calc(14px * var(--k)); font-size: calc(36px * var(--k)); font-weight: 700; color: var(--destaque); }
+{{card}}.compacto .nome { font-size: calc(76px * var(--k)); }
+{{card}}.compacto .barra { margin: calc(14px * var(--k)) 0; }

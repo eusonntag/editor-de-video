@@ -1,0 +1,490 @@
+{
+ "language_code": "pt",
+ "engine": "sapi-sintetico",
+ "text": "Olá! Este é o vídeo de exemplo do editor. Ele corta as pausas, ele corta as pausas e os erros da gravação. Depois coloca três coisas: zoom, animações e legenda. Pronto! Seu editor está funcionando.",
+ "words": [
+  {
+   "text": "Olá!",
+   "start": 0.843,
+   "end": 1.322,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 1.322,
+   "end": 2.16,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "Este",
+   "start": 2.16,
+   "end": 2.53,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 2.53,
+   "end": 2.56,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "é",
+   "start": 2.56,
+   "end": 2.73,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 2.73,
+   "end": 2.76,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "o",
+   "start": 2.76,
+   "end": 2.93,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 2.93,
+   "end": 2.96,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "vídeo",
+   "start": 2.96,
+   "end": 3.397,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 3.397,
+   "end": 3.427,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "de",
+   "start": 3.427,
+   "end": 3.663,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 3.663,
+   "end": 3.693,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "exemplo",
+   "start": 3.693,
+   "end": 4.263,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 4.263,
+   "end": 4.293,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "do",
+   "start": 4.293,
+   "end": 4.53,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 4.53,
+   "end": 4.56,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "editor.",
+   "start": 4.56,
+   "end": 5.064,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 5.064,
+   "end": 7.408,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "Ele",
+   "start": 7.408,
+   "end": 7.738,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 7.738,
+   "end": 7.768,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "corta",
+   "start": 7.768,
+   "end": 8.241,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 8.241,
+   "end": 8.271,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "as",
+   "start": 8.271,
+   "end": 8.529,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 8.529,
+   "end": 8.559,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "pausas,",
+   "start": 8.559,
+   "end": 9.104,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 9.104,
+   "end": 10.032,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "ele",
+   "start": 10.032,
+   "end": 10.32,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 10.32,
+   "end": 10.35,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "corta",
+   "start": 10.35,
+   "end": 10.764,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 10.764,
+   "end": 10.794,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "as",
+   "start": 10.794,
+   "end": 11.018,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 11.018,
+   "end": 11.048,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "pausas",
+   "start": 11.048,
+   "end": 11.526,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 11.526,
+   "end": 11.556,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "e",
+   "start": 11.556,
+   "end": 11.717,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 11.717,
+   "end": 11.747,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "os",
+   "start": 11.747,
+   "end": 11.971,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 11.971,
+   "end": 12.001,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "erros",
+   "start": 12.001,
+   "end": 12.416,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 12.416,
+   "end": 12.446,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "da",
+   "start": 12.446,
+   "end": 12.67,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 12.67,
+   "end": 12.7,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "gravação.",
+   "start": 12.7,
+   "end": 13.305,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 13.305,
+   "end": 15.33,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "Depois",
+   "start": 15.33,
+   "end": 15.989,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 15.989,
+   "end": 16.019,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "coloca",
+   "start": 16.019,
+   "end": 16.677,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 16.677,
+   "end": 16.707,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "três",
+   "start": 16.707,
+   "end": 17.194,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 17.194,
+   "end": 17.224,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "coisas:",
+   "start": 17.224,
+   "end": 17.882,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 17.882,
+   "end": 17.912,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "zoom,",
+   "start": 17.912,
+   "end": 18.399,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 18.399,
+   "end": 18.429,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "animações",
+   "start": 18.429,
+   "end": 19.346,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 19.346,
+   "end": 19.376,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "e",
+   "start": 19.376,
+   "end": 19.604,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 19.604,
+   "end": 19.634,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "legenda.",
+   "start": 19.634,
+   "end": 20.379,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 20.379,
+   "end": 22.125,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "Pronto!",
+   "start": 22.125,
+   "end": 22.873,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 22.873,
+   "end": 23.731,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "Seu",
+   "start": 23.731,
+   "end": 24.072,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 24.072,
+   "end": 24.102,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "editor",
+   "start": 24.102,
+   "end": 24.666,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 24.666,
+   "end": 24.696,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "está",
+   "start": 24.696,
+   "end": 25.111,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": " ",
+   "start": 25.111,
+   "end": 25.141,
+   "type": "spacing",
+   "speaker_id": "speaker_0"
+  },
+  {
+   "text": "funcionando.",
+   "start": 25.141,
+   "end": 26.076,
+   "type": "word",
+   "speaker_id": "speaker_0"
+  }
+ ]
+}

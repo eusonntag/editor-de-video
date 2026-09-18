@@ -1,0 +1,59 @@
+name: Teste de instalação e pipeline
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  teste:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: FFmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg -y --no-progress
+
+      - name: FFmpeg (Mac)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+
+      - name: Diagnóstico antes da instalação
+        run: python editor.py diagnostico
+
+      - name: Instalar o editor
+        run: python editor.py instalar
+
+      - name: Diagnóstico depois da instalação
+        run: python editor.py diagnostico --json
+
+      - name: Pipeline completo com o vídeo de exemplo
+        run: python editor.py exemplo
+
+      - name: Busca de ícones em português
+        run: python editor.py icones buscar "vendas dinheiro"
+
+      - name: Resultado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exemplo-${{ matrix.os }}
+          path: |
+            videos/Editados/exemplo_editado.mp4
+            videos/.trabalho/_exemplo/verificacao.jpg
+            videos/.trabalho/_exemplo/motion/horizontal/montagem.json
+          if-no-files-found: warn

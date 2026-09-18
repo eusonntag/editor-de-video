@@ -1,0 +1,24 @@
+{
+  "tipo": "personalizado",
+  "nome": "Personalizado (saída de emergência)",
+  "uso": "Quando nenhum modelo serve. HTML/CSS/JS à mão seguindo o contrato do HyperFrames.",
+  "campos": {
+    "html": {
+      "obrigatorio": true,
+      "obs": "conteúdo de dentro do cartão (.root); ids prefixados com o id do card"
+    },
+    "css": {
+      "obs": "CSS extra; {{card}} vira o seletor do card"
+    },
+    "js": {
+      "obs": "animações GSAP; disponíveis: tl, ID, A (início), B (fim), sel(x) = seletor dentro do card"
+    }
+  },
+  "animacao": "a definida no js",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

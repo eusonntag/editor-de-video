@@ -1,0 +1,3 @@
+{{card}} .titulo { font-size: calc(64px * var(--k)); line-height: 1.08; margin-top: calc(14px * var(--k)); }
+{{card}} .titulo .palavra-anim { margin-right: .22em; }
+{{card}}.compacto .titulo { font-size: calc(58px * var(--k)); }

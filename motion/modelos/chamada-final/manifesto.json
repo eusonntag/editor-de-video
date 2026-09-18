@@ -1,0 +1,34 @@
+{
+  "tipo": "chamada-final",
+  "nome": "Chamada final",
+  "uso": "Fim do vídeo: seguir, comentar, compartilhar ou acessar o link.",
+  "duracao_minima": 2.5,
+  "campos": {
+    "texto": {
+      "padrao": "Me siga para mais",
+      "exemplo": "Comente EU QUERO"
+    },
+    "arroba": {
+      "padrao": "arroba da marca"
+    },
+    "acao": {
+      "padrao": "seguir",
+      "opcoes": [
+        "seguir",
+        "comentar",
+        "compartilhar",
+        "link"
+      ]
+    },
+    "palavra": {
+      "obs": "palavra falada em que a chamada aparece (ou em, em segundos)"
+    }
+  },
+  "animacao": "cartão sobe, @ entra em pílula e pulsa, ícone da ação balança; usa o logo da marca se houver",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

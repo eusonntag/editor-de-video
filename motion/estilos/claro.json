@@ -1,0 +1,15 @@
+{
+  "id": "claro",
+  "nome": "Claro minimalista",
+  "descricao": "Cartão branco limpo, texto escuro e destaque azul. Cara de aula, consultoria e tecnologia.",
+  "fontes": {"titulo": ["Inter", "Inter-900.ttf", 900], "texto": ["Inter", "Inter-700.ttf", 700], "apoio": ["Inter", "Inter-400.ttf", 400]},
+  "vars": {
+    "--bg": "rgba(255,255,255,.94)", "--texto": "#111418", "--suave": "#5b6470",
+    "--destaque": "#2f6bff", "--destaque-2": "#16a34a", "--destaque-3": "#f97316", "--sobre-destaque": "#ffffff",
+    "--borda": "1px solid rgba(0,0,0,.06)", "--raio": "22px", "--sombra": "0 24px 60px -18px rgba(0,0,0,.35)",
+    "--caixinha": "rgba(17,20,24,.06)", "--kicker-espaco": ".14em", "--desfoque": "none"
+  },
+  "kicker_maiusculas": true,
+  "animacao": {"entrada": "power2.out", "mola": "back.out(1.4)", "duracao": 0.45, "deslocamento": 40},
+  "icones": "linha"
+}

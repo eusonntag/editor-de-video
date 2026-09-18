@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Vídeo · Painel</title>
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand" onclick="location.hash='#/'">
+      <div class="brand-mark"></div>
+      <div class="brand-text">Editor de Vídeo<span class="tiny">painel de edição</span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-footer" id="rodape">localhost</div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs" id="crumbs"></div>
+      <div class="status-dot" id="status"><span class="dot"></span><span id="status-txt">conectado</span></div>
+    </div>
+    <div class="page" id="pagina"></div>
+  </main>
+</div>
+
+<div class="pendentes" id="pendentes" hidden>
+  <div class="lista" id="pendentes-lista"></div>
+  <div class="acoes">
+    <button class="btn" id="bt-descartar">Descartar</button>
+    <button class="btn" id="bt-copiar">Copiar pedido</button>
+    <button class="btn btn-claude" id="bt-aplicar">Aplicar alterações</button>
+  </div>
+</div>
+<div class="aviso" id="aviso" hidden></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
