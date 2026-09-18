@@ -26,9 +26,9 @@ Medido em 2026-09-18 num PC com Ryzen 5 4600G (6 núcleos), 24 GB de RAM, sem pl
 | Salvar e verificar o vídeo final | cerca de 10 segundos | |
 | Abrir o painel | cerca de 5 segundos | |
 | Teste com o vídeo de exemplo | 2 a 4 minutos | medido: 90 s (3 min na primeira vez, com o navegador frio) |
+| Ajuste de cards (`/video-ajustar`: motion + legenda + salvar) | cerca de 5× D + 30 segundos | medido: 14 s levaram 2 min 15 s |
 
 Regra de unidade: até 120 segundos, fale em segundos ("cerca de 45 segundos"); acima, em minutos ("3 a 5 minutos"). Para vídeos longos, arredonde para cima.
 
 Exemplo: vídeo de 5 min (D = 300 s, 4 min depois do corte), pacote completo, só horizontal:
 transcrição 10 s + rascunho 1,5 min + corte 3,5 min + zoom 4 min + motion 16 min + legenda 2 min ≈ **27 a 30 minutos**.
-| Ajuste de cards (`/video-ajustar`: motion + legenda + salvar) | cerca de 5× D + 30 segundos | medido: 14 s levaram 2 min 15 s |
