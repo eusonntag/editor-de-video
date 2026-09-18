@@ -79,7 +79,7 @@ Dica de gravação: luz de frente, câmera na altura dos olhos, microfone perto.
 | Pouco espaço no disco | `/video-ajuda` → "Liberar espaço" apaga só os arquivos intermediários de vídeos já prontos. |
 | Qualquer outra coisa | Rode `/configurar-editor-video`: ele diagnostica e conserta. |
 
-Instalação manual (se o instalador automático falhar): Python 3.12 (https://www.python.org/downloads/, marque "Add Python to PATH"), Node.js LTS (https://nodejs.org), FFmpeg (Windows: https://www.gyan.dev/ffmpeg/builds/, Mac: `brew install ffmpeg`) e Git (https://git-scm.com). Depois, `/configurar-editor-video`.
+Instalação manual (se o instalador automático falhar): Python 3.12 (https://www.python.org/downloads/, marque "Add Python to PATH"), Node.js 22 ou mais novo (versão LTS em https://nodejs.org), FFmpeg (Windows: https://www.gyan.dev/ffmpeg/builds/, Mac: `brew install ffmpeg-full`, que inclui as legendas) e Git (https://git-scm.com). Depois, `/configurar-editor-video`.
 
 ---
 

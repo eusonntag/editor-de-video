@@ -72,6 +72,11 @@ def _completar_path() -> None:
     novos = [str(p) for p in extras if p.exists() and str(p) not in atual]
     if novos:
         os.environ["PATH"] = os.pathsep.join(atual + novos)
+    if os.name != "nt":
+        # ffmpeg-full (com legendas) do Homebrew fica em opt/ e precisa vir antes do ffmpeg simples
+        for p in (Path("/opt/homebrew/opt/ffmpeg-full/bin"), Path("/usr/local/opt/ffmpeg-full/bin")):
+            if p.exists() and str(p) not in atual:
+                os.environ["PATH"] = str(p) + os.pathsep + os.environ["PATH"]
 
 
 def _reexecutar() -> None:

@@ -96,13 +96,14 @@ def diagnostico() -> dict:
     tem_x264 = bool(ffmpeg) and "libx264" in (_saida(["ffmpeg", "-hide_banner", "-encoders"]) or "")
     item("ffmpeg", "FFmpeg (com legendas e H.264)", ffmpeg and tem_ass and tem_x264,
          (_versao(ffmpeg) + ("" if tem_ass and tem_x264 else " (sem libass/libx264)")) if ffmpeg else "não encontrado",
-         "winget install Gyan.FFmpeg" if WIN else "brew install ffmpeg")
+         "winget install Gyan.FFmpeg" if WIN else "brew install ffmpeg-full")
     item("ffprobe", "FFprobe", _saida(["ffprobe", "-version"]) is not None, "junto com o FFmpeg",
          "vem com o FFmpeg")
 
     node = _saida(["node", "--version"])
-    node_ok = bool(node) and int(_versao(node).split(".")[0]) >= 18
-    item("node", "Node.js 18+", node_ok, _versao(node) or "não encontrado",
+    node_ok = bool(node) and int(_versao(node).split(".")[0]) >= 22  # o HyperFrames exige Node 22+
+    item("node", "Node.js 22+", node_ok, (_versao(node) + ("" if node_ok else " (antigo, precisa do 22 ou mais novo)"))
+         if node else "não encontrado",
          "winget install OpenJS.NodeJS.LTS" if WIN else "brew install node")
     item("git", "Git", _saida(["git", "--version"]) is not None, _versao(_saida(["git", "--version"])) or "não encontrado",
          "winget install Git.Git" if WIN else "xcode-select --install")
@@ -201,11 +202,15 @@ def instalar_sistema(d: dict, executar: bool) -> list[str]:
         for k, pid in pacotes.items():
             if k in faltando:
                 cmds.append([*base, pid])
+                if k == "node":  # Node antigo já instalado: "install" não troca de versão
+                    cmds.append(["winget", "upgrade", "-e", "--silent", "--accept-package-agreements",
+                                 "--accept-source-agreements", "--id", pid])
     elif MAC:
         if not shutil.which("brew"):
             cmds.append(["/bin/bash", "-c",
                          "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"])
-        pacotes = {"python": "python@3.12", "ffmpeg": "ffmpeg", "node": "node", "git": "git"}
+        # "ffmpeg" do Homebrew vem sem libass (legendas); o completo é o "ffmpeg-full"
+        pacotes = {"python": "python@3.12", "ffmpeg": "ffmpeg-full", "node": "node", "git": "git"}
         for k, pk in pacotes.items():
             if k in faltando:
                 cmds.append(["brew", "install", pk])

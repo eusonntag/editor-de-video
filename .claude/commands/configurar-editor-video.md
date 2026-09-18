@@ -207,7 +207,7 @@ Os vídeos prontos ficam em: {caminho absoluto de videos/Editados}
 ## Links úteis
 
 - Python: https://www.python.org/downloads/ (no Windows, marque "Add Python to PATH")
-- Node.js (versão LTS): https://nodejs.org/
-- FFmpeg Windows: https://www.gyan.dev/ffmpeg/builds/ · Mac: `brew install ffmpeg` (https://brew.sh)
+- Node.js 22 ou mais novo (versão LTS): https://nodejs.org/
+- FFmpeg Windows: https://www.gyan.dev/ffmpeg/builds/ · Mac: `brew install ffmpeg-full` (https://brew.sh; o `ffmpeg` simples vem sem legendas)
 - Git: https://git-scm.com/downloads
 - Groq (transcrição): https://console.groq.com

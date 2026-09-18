@@ -14,15 +14,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: FFmpeg (Windows)
         if: runner.os == 'Windows'
@@ -30,7 +30,7 @@ jobs:
 
       - name: FFmpeg (Mac)
         if: runner.os == 'macOS'
-        run: brew install ffmpeg
+        run: brew install ffmpeg-full
 
       - name: Diagnóstico antes da instalação
         run: python editor.py diagnostico
@@ -49,7 +49,7 @@ jobs:
 
       - name: Resultado
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: exemplo-${{ matrix.os }}
           path: |
