@@ -1,7 +1,7 @@
 ---
 name: editor-video:configurar-editor-video
 description: Instala e configura o editor de vídeo pela primeira vez (ou conserta uma instalação). Verifica Python, Node, FFmpeg e bibliotecas, instala o que faltar, conecta a transcrição (Groq, local ou ElevenLabs), cria a identidade visual e testa com um vídeo de exemplo. Use quando o aluno disser "instalar", "configurar", "primeira vez", "não está funcionando", "deu erro na instalação".
-allowed-tools: Read, Write, Edit, Bash, Glob
+allowed-tools: Read, Write, Edit, Bash, Glob, SendUserFile
 model: sonnet
 ---
 

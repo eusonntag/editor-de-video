@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-painel
 description: Abre o painel visual de edição no navegador (estilo CapCut) - linha do tempo com o que foi cortado, zooms, cards de motion e legenda, player sincronizado, transcrição clicável para manter ou cortar frases, edição dos textos dos cards e correção de palavras. Os ajustes voltam para o Claude pelo /video-ajustar. Use para "abrir o painel", "ver a linha do tempo", "revisar no painel", "ver o que foi cortado". "/video-painel fechar" encerra o painel.
-allowed-tools: Read, Bash
+allowed-tools: Read, Bash, SendUserFile
 model: sonnet
 ---
 

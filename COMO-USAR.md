@@ -9,6 +9,7 @@ Todos os comandos começam com `/` e são digitados no chat do Claude Code, com 
 | `/configurar-editor-video` | Instala e configura tudo, com um teste no final. Rode de novo se algo quebrar. |
 | `/configurar-transcricao` | Escolhe como transcrever: Groq (grátis, recomendado), no computador ou ElevenLabs. |
 | `/video-marca` | Seu nome, @, cor, fonte, logo e os estilos padrão de animação, legenda e edição. |
+| `/configurar-legenda` | Detalhes da legenda vendo no seu vídeo: fonte, tamanho, cores, contorno ou tarja, palavras por vez, posição e animação. |
 
 ## Editar
 

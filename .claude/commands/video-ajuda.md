@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-ajuda
 description: Explica como o editor funciona, lista os comandos por categoria e mostra o status dos vídeos (novos, em andamento, prontos). Também oferece "Liberar espaço" (apaga só os arquivos intermediários de vídeos já prontos). Use para "ajuda", "como funciona", "o que dá para fazer", "quais comandos", "status dos vídeos", "liberar espaço", "está ocupando muito espaço".
-allowed-tools: Read, Bash
+allowed-tools: Read, Bash, SendUserFile
 model: sonnet
 ---
 
@@ -33,6 +33,7 @@ Editar
 
 Configurar
 - /video-marca: suas cores, fonte, logo e estilos padrão
+- /configurar-legenda: fonte, cores, tamanho e posição da legenda
 - /configurar-transcricao: trocar o serviço de transcrição
 - /configurar-editor-video: instalar ou consertar o editor
 ```

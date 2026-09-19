@@ -31,9 +31,13 @@ Digite o número:
 ```
 1 → `{PY} editor.py analisar-imagem <id> --comparar` → abra (Read) `cor-comparacao.jpg`, confira que o "depois" está melhor e que `estouro_novo` é `false`, e mostre o caminho: `Antes (em cima) e depois (embaixo): {caminho}. 1. Aplicar a correção / 2. Deixar sem correção`. Aplicar → `{PY} editor.py cor <id> --filtro "<sugestao>"`.
 
+(A imagem de antes e depois também vai dentro da conversa.)
+
 ## 4. Rascunho para aprovar
 
-`⏳ Passo 2/3: montar o rascunho do corte.` → `{PY} editor.py cortar <id> --rascunho` (também calcula os zooms do estilo).
+`⏳ Passo 2/3: montar o rascunho do corte com os zooms.` → `{PY} editor.py cortar <id> --rascunho` (calcula os zooms do estilo e já aplica no rascunho: o aluno aprova cortes e zooms juntos).
+
+Mostre o `rascunho.mp4` dentro da conversa (`SendUserFile`, regra "PRÉVIAS DENTRO DA CONVERSA" do CLAUDE.md) junto com o resumo abaixo.
 
 Monte o resumo com `{PY} editor.py corte-resumo <id> --json` + suas anotações do passo 2, e (se o estilo não for natural) `{PY} editor.py dinamica <id> --listar`:
 
@@ -52,8 +56,8 @@ Zooms da edição dinâmica (12):
 2. 0:05 zoom de corte
 …
 
-Rascunho (qualidade baixa, só para conferir os cortes):
-{caminho absoluto do rascunho.mp4}
+Rascunho acima (qualidade baixa, só para conferir cortes e zooms).
+Arquivo: {caminho absoluto do rascunho.mp4}
 
 1. Aprovar
 2. Manter algo que foi cortado
@@ -68,7 +72,7 @@ Digite o número:
 - 2 → `O que devo manter? (ex.: "a piada do começo", "a frase das 1:02")` → devolva ao EDL → refaça o passo 4.
 - 3 → `O que mais cortar? (ex.: "a parte em que falo do curso", ou "pode apertar as pausas")` → ajuste (pausas: `cortes-base` com `--pausa 0.25` + repetir o passo 2) → passo 4.
 - 4 → `cortes-base` com `--pausa 0.5` + repetir o passo 2 → passo 4.
-- 5 → `Quais números? (ex.: 2, 5)` → `{PY} editor.py dinamica <id> --desligar 2,5` → mostre a lista nova e repita a pergunta.
+- 5 → `Quais números? (ex.: 2, 5)` → `⏳ Passo 1/1: atualizar o rascunho sem esses zooms.` → `{PY} editor.py dinamica <id> --desligar 2,5 --previa` → mostre a lista nova e o rascunho atualizado e repita a pergunta.
 - 6 → fluxo do `/video-painel`, depois volte a esta pergunta.
 
 ## 5. Corte final

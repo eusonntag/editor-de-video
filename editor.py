@@ -23,7 +23,7 @@ Corte
   corte-resumo <id> [--json]            antes → depois e o que foi removido
   analisar-imagem <id> [--comparar]     cor/exposição; sugere correção
   cor <id> (--filtro "..." | --remover)
-  dinamica <id> [--estilo natural|dinamica|acelerada] [--listar] [--desligar N,N]
+  dinamica <id> [--estilo natural|dinamica|acelerada] [--listar] [--desligar N,N] [--previa]
 Formato, motion e legenda
   layout <id> horizontal|vertical|react [--sem-zoom] [opções do react]
   conferir-layout <id> <formato>
@@ -31,7 +31,8 @@ Formato, motion e legenda
   icones buscar "termos" | icones indexar
   motion <id> montar|previa|galeria|render|validar --formato F [--estilo X] [--icones Y] [--tipo estilos|icones]
   legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N] [--tamanho px]
-  galeria-legendas <id> --formato F
+  galeria-legendas <id> --formato F [--variar estilo|fonte|tamanho|cor|contorno|palavras|maiusculas|posicao|atual]
+  legenda-config [--video <id>] [--definir k=v …] [--limpar k,k|tudo] [--json]
 Entrega
   finalizar <id> --nome N [--formatos a,b] [--substituir | --nova-versao]
   verificar <id> --formato F
@@ -314,6 +315,16 @@ def _zooms(vid: str, t: Path) -> None:
     rodar_script("dinamica.py", str(t), "--estilo", estilo)
 
 
+def _rascunho_com_zoom(t: Path) -> None:
+    """O aluno aprova cortes e zooms juntos: aplica os zooms ativos no rascunho."""
+    sem_zoom = t / "rascunho_sem_zoom.mp4"
+    if not sem_zoom.exists():
+        if not (t / "rascunho.mp4").exists():
+            return
+        (t / "rascunho.mp4").replace(sem_zoom)  # rascunho feito antes desta versão do editor
+    rodar_script("layout.py", str(t), "horizontal", "--previa")
+
+
 def cmd_cortar(a) -> None:
     vid = C.id_video(a.id)
     t = trab(vid)
@@ -328,8 +339,11 @@ def cmd_cortar(a) -> None:
         destino = t / "rascunho.mp4"
         C.rodar_script(script, str(edl), "-o", str(destino), "--draft", "--no-subtitles", quieto=True)
         rodar_script("palavras_timeline.py", str(edl))
-        _zooms(vid, t)
-        print(f"✅ rascunho do corte: {destino}")
+        _zooms(vid, t)  # lê a duração do rascunho.mp4 novo
+        destino.replace(t / "rascunho_sem_zoom.mp4")
+        (t / "rosto_rascunho.json").unlink(missing_ok=True)
+        _rascunho_com_zoom(t)
+        print(f"✅ rascunho do corte (com os zooms): {destino}")
         return
     destino = t / "cortado.mp4"
     C.rodar_script(script, str(edl), "-o", str(destino), "--no-subtitles", quieto=True)
@@ -435,6 +449,9 @@ def cmd_dinamica(a) -> None:
         arq.write_text(json.dumps(d, indent=1, ensure_ascii=False), encoding="utf-8")
     if a.listar or a.desligar or a.estilo:
         rodar_script("dinamica.py", str(t), "--listar")
+    if a.previa:
+        _rascunho_com_zoom(t)
+        print(f"✅ rascunho atualizado com os zooms: {t / 'rascunho.mp4'}")
 
 
 # ------------------------------------------------------ formato / motion / legenda ----
@@ -556,10 +573,7 @@ def cmd_legendar(a) -> None:
     if estilo:
         esc["legenda_estilo"] = estilo
         args += ["--estilo", estilo]
-    if opcoes.get("cor"):
-        args += ["--cor", opcoes["cor"]]
-    if opcoes.get("tamanho"):
-        args += ["--tamanho", str(opcoes["tamanho"])]
+    args += _opcoes_legenda_video(opcoes)
     margem = (opcoes.get("margem_v") or {}).get(a.formato)
     if margem and "--centro-y" not in args:
         if "--margem-v" in args:
@@ -574,12 +588,122 @@ def cmd_legendar(a) -> None:
     print(f"✅ legenda pronta: {destino}")
 
 
+def _opcoes_legenda_video(opcoes: dict) -> list[str]:
+    """Opções da legenda guardadas no vídeo (vencem as da marca). margem_v é por formato: vai à parte."""
+    extras = {k: v for k, v in opcoes.items() if k != "margem_v" and v not in ("", None)}
+    return ["--opcoes", json.dumps(extras, ensure_ascii=False)] if extras else []
+
+
 def cmd_galeria_legendas(a) -> None:
     vid = C.id_video(a.id)
     t = trab(vid)
     entrada, args = parametros_legenda(vid, a.formato)
-    destino = t / a.formato / "galeria-legendas.jpg"
-    rodar_script("legendas.py", str(t / "palavras.json"), "--video", str(entrada), "--galeria", str(destino), *args)
+    esc = C.ler_estado(vid).get("escolhas") or {}
+    opcoes = esc.get("legenda_opcoes") or {}
+    args += _opcoes_legenda_video(opcoes)
+    margem = (opcoes.get("margem_v") or {}).get(a.formato)
+    if margem and "--centro-y" not in args:
+        if "--margem-v" in args:
+            i = args.index("--margem-v")
+            del args[i:i + 2]
+        args += ["--margem-v", str(margem)]
+    if esc.get("legenda_estilo"):
+        args += ["--estilo", esc["legenda_estilo"]]
+    variar = a.variar or "estilo"
+    nome = "galeria-legendas.jpg" if variar == "estilo" else f"galeria-legendas-{variar}.jpg"
+    destino = t / a.formato / nome
+    rodar_script("legendas.py", str(t / "palavras.json"), "--video", str(entrada), "--galeria", str(destino),
+                 "--variar", variar, *args)
+
+
+def _valor_legenda(chave: str, bruto: str):
+    """Converte e confere um valor do legenda-config (o aluno nunca vê isto; mensagens curtas)."""
+    import legendas as L
+
+    try:
+        v = json.loads(bruto)
+    except json.JSONDecodeError:
+        v = bruto
+    escolhas = {"estilo": list(L.ESTILOS), "fonte": list(L.FONTES_LEGENDA), "contorno": ["sem", "fino", "normal", "grosso"],
+                "fundo": ["nenhum", "tarja", "translucido"], "animacao": ["pop", "nenhuma"], "posicao": ["baixo", "centro"]}
+    if v is None:
+        return None
+    if chave in escolhas:
+        v = str(v).lower()
+        if chave == "fonte":
+            v = next((k for k, (nome, _) in L.FONTES_LEGENDA.items() if v in (k, nome.lower())), v)
+        if v not in escolhas[chave]:
+            raise SystemExit(f"✗ {chave}: use {', '.join(escolhas[chave])}")
+    elif chave.startswith("cor"):
+        v = str(v)
+        if not (v.startswith("#") and len(v) == 7):
+            raise SystemExit(f"✗ {chave}: use o código da cor, ex.: #FFD400")
+    elif chave in ("destaque", "maiusculas"):
+        if not isinstance(v, bool):
+            raise SystemExit(f"✗ {chave}: use true ou false")
+    elif chave in ("escala", "subir"):
+        v = float(v)
+    elif chave in ("tamanho", "max_palavras"):
+        v = int(v)
+    return v
+
+
+def cmd_legenda_config(a) -> None:
+    """Opções da legenda: padrão de todos os vídeos (config/marca.json) ou só de um vídeo (estado.json)."""
+    import legendas as L
+
+    chaves = ["estilo", *[k for k in L.OPCOES if k not in ("margem_v", "centro_y")]]
+    marca_p = C.CONFIG / "marca.json"
+    marca = C.ler_json(marca_p, {})
+    global_ = dict(marca.get("legenda") or {})
+    vid = C.id_video(a.video) if a.video else None
+    e = C.ler_estado(vid) if vid else {}
+    esc = e.setdefault("escolhas", {}) if vid else {}
+    do_video = dict(esc.get("legenda_opcoes") or {})
+    if vid and esc.get("legenda_estilo"):
+        do_video["estilo"] = esc["legenda_estilo"]
+
+    alvo = do_video if vid else global_
+    if a.limpar:
+        for k in (chaves if a.limpar == "tudo" else a.limpar.split(",")):
+            alvo.pop(k.strip(), None)
+    for par in a.definir or []:
+        k, _, bruto = par.partition("=")
+        k = k.strip()
+        if k not in chaves:
+            raise SystemExit(f"✗ opção desconhecida: {k}. Opções: {', '.join(chaves)}")
+        v = _valor_legenda(k, bruto)
+        if v is None:
+            alvo.pop(k, None)
+        else:
+            alvo[k] = v
+    if a.definir or a.limpar:
+        if vid:
+            estilo = do_video.pop("estilo", None)
+            if estilo:
+                esc["legenda_estilo"] = estilo
+            else:
+                esc.pop("legenda_estilo", None)
+            esc["legenda_opcoes"] = do_video
+            C.salvar_estado(vid, e)
+        else:
+            marca["legenda"] = {k: v for k, v in global_.items() if v not in ("", None)}
+            C.gravar_json(marca_p, marca)
+
+    efetivo = {k: v for k, v in global_.items() if v not in ("", None)}
+    efetivo.update({k: v for k, v in do_video.items() if k != "margem_v" and v not in ("", None)})
+    res = {"padrao_todos": {k: v for k, v in global_.items() if v not in ("", None)},
+           "so_este_video": do_video if vid else None, "efetivo": efetivo, "opcoes": {"estilo": "dinamica | classica | caixa | palavra", **L.OPCOES}}
+    if a.json:
+        print(json.dumps(res, indent=1, ensure_ascii=False))
+        return
+    print("Legenda (" + (f"vídeo {vid}" if vid else "padrão de todos os vídeos") + "):")
+    for k in chaves:
+        if k in efetivo:
+            origem = "este vídeo" if vid and k in do_video else "padrão"
+            print(f"  {k} = {efetivo[k]}  ({origem})")
+    if not efetivo:
+        print("  (tudo no padrão do estilo)")
 
 
 # ------------------------------------------------------------------- entrega ----
@@ -798,6 +922,7 @@ def main() -> None:
     p = sub.add_parser("cor"); p.add_argument("id"); g = p.add_mutually_exclusive_group(required=True); g.add_argument("--filtro"); g.add_argument("--remover", action="store_true")
     p = sub.add_parser("dinamica"); p.add_argument("id"); p.add_argument("--estilo", choices=["natural", "dinamica", "acelerada"])
     p.add_argument("--listar", action="store_true"); p.add_argument("--desligar")
+    p.add_argument("--previa", action="store_true", help="refaz o rascunho do corte com os zooms atuais")
     p = sub.add_parser("layout"); p.add_argument("id"); p.add_argument("formato", choices=["horizontal", "vertical", "react"]); p.add_argument("--sem-zoom", action="store_true")
     p = sub.add_parser("conferir-layout"); p.add_argument("id"); p.add_argument("formato", choices=["horizontal", "vertical", "react"])
     p = sub.add_parser("baixar-referencia"); p.add_argument("url"); p.add_argument("--nome")
@@ -808,6 +933,9 @@ def main() -> None:
     p.add_argument("--estilo", choices=["dinamica", "classica", "caixa", "palavra"]); p.add_argument("--cor"); p.add_argument("--margem-v", type=int)
     p.add_argument("--tamanho", type=int, help="tamanho da letra em px (padrão: 4,2%% da altura no vertical, 6,2%% no horizontal)")
     p = sub.add_parser("galeria-legendas"); p.add_argument("id"); p.add_argument("--formato", default="horizontal", choices=["horizontal", "vertical", "react"])
+    p.add_argument("--variar", choices=["estilo", "fonte", "tamanho", "cor", "contorno", "palavras", "maiusculas", "posicao", "atual"])
+    p = sub.add_parser("legenda-config"); p.add_argument("--video"); p.add_argument("--definir", nargs="*")
+    p.add_argument("--limpar", help="opções separadas por vírgula, ou 'tudo'"); p.add_argument("--json", action="store_true")
     p = sub.add_parser("finalizar"); p.add_argument("id"); p.add_argument("--nome", required=True); p.add_argument("--formatos")
     g = p.add_mutually_exclusive_group(); g.add_argument("--substituir", action="store_true"); g.add_argument("--nova-versao", action="store_true")
     p = sub.add_parser("verificar"); p.add_argument("id"); p.add_argument("--formato", default="horizontal", choices=["horizontal", "vertical", "react"])
@@ -827,7 +955,7 @@ def main() -> None:
         "cortar": cmd_cortar, "corte-resumo": cmd_corte_resumo, "analisar-imagem": cmd_analisar_imagem,
         "cor": cmd_cor, "dinamica": cmd_dinamica, "conferir-layout": cmd_conferir_layout,
         "baixar-referencia": cmd_baixar_referencia, "motion": cmd_motion, "legendar": cmd_legendar,
-        "galeria-legendas": cmd_galeria_legendas, "finalizar": cmd_finalizar, "verificar": cmd_verificar,
+        "galeria-legendas": cmd_galeria_legendas, "legenda-config": cmd_legenda_config, "finalizar": cmd_finalizar, "verificar": cmd_verificar,
         "painel": cmd_painel, "liberar-espaco": cmd_liberar_espaco, "exemplo": cmd_exemplo, "chave": cmd_chave,
     }
     if a.cmd == "layout":

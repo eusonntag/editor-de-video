@@ -10,6 +10,7 @@ A duração não muda, então palavras.json continua valendo para cards e legend
 Uso:
   python -X utf8 scripts/layout.py <trabalho> horizontal
   python -X utf8 scripts/layout.py <trabalho> vertical [--sem-zoom]
+  python -X utf8 scripts/layout.py <trabalho> horizontal --previa   (zooms no rascunho: rascunho_sem_zoom.mp4 → rascunho.mp4)
   python -X utf8 scripts/layout.py <trabalho> react --referencia ref.mp4 [--orientacao vertical|horizontal]
       [--posicao cima|baixo|lado|pip] [--proporcao 50|40] [--inicio 0] [--fim 30]
       [--curta repetir|congelar|velocidade] [--audio mudo|baixo|auto] [--cor-linha "#c4ff5e"]
@@ -166,7 +167,8 @@ class Enquadrador:
 
 # ---------------------------------------------------------------- render ----
 
-def renderizar_python(origem: Path, destino: Path, enq: Enquadrador, info: dict, com_audio: bool = True) -> None:
+def renderizar_python(origem: Path, destino: Path, enq: Enquadrador, info: dict, com_audio: bool = True,
+                      rapido: bool = False) -> None:
     import cv2
 
     W, H = info["largura"], info["altura"]
@@ -182,13 +184,18 @@ def renderizar_python(origem: Path, destino: Path, enq: Enquadrador, info: dict,
     enc_cmd = ["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgr24",
                "-s", f"{enq.ow}x{enq.oh}", "-r", info["fps_str"], "-i", "-"]
     if com_audio and info["tem_audio"]:
-        enc_cmd += ["-i", str(origem), "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "192k"]
-    if enq.bw / enq.ow < 0.95:
+        enc_cmd += ["-i", str(origem), "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k" if rapido else "192k"]
+    if rapido:
+        # rascunho: só para conferir cortes e zooms (qualidade baixa, rápido)
+        enc_cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "28", "-pix_fmt", "yuv420p",
+                    "-movflags", "+faststart", "-shortest", str(destino)]
+    elif enq.bw / enq.ow < 0.95:
         # imagem ampliada (vertical/react a partir de horizontal): nitidez leve, como no pipeline antigo
         enc_cmd += ["-vf", "unsharp=5:5:0.4:5:5:0.0"]
-    enc_cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-g", str(fps_int),
-                "-keyint_min", str(fps_int), "-pix_fmt", "yuv420p", "-movflags", "+faststart",
-                "-shortest", str(destino)]
+    if not rapido:
+        enc_cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-g", str(fps_int),
+                    "-keyint_min", str(fps_int), "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                    "-shortest", str(destino)]
     dec = subprocess.Popen(dec_cmd, stdout=subprocess.PIPE)
     enc = subprocess.Popen(enc_cmd, stdin=subprocess.PIPE)
     tam = tw * th * 3
@@ -374,6 +381,28 @@ def montar_react(trab: Path, a, info: dict, trilha: Trilha, zoom: Zoom, destino:
 
 # ------------------------------------------------------------------ main ----
 
+def previa_zoom(trab: Path) -> None:
+    """Rascunho com os zooms do jeito que vão ficar no horizontal (mesma linha do tempo do corte)."""
+    origem = trab / "rascunho_sem_zoom.mp4"
+    if not origem.exists():
+        raise SystemExit("falta o rascunho do corte: rode o corte em rascunho antes")
+    din = trab / "dinamica.json"
+    eventos = json.loads(din.read_text(encoding="utf-8")).get("eventos", []) if din.exists() else []
+    zoom = Zoom(eventos)
+    destino = trab / "rascunho.mp4"
+    if not zoom.ev:
+        import shutil
+
+        shutil.copyfile(origem, destino)
+        print(f"rascunho sem zooms → {destino}")
+        return
+    info = info_video(origem)
+    trilha = Trilha(rastrear(origem, trab / "rosto_rascunho.json"))
+    enq = Enquadrador(info["largura"], info["altura"], info["largura"], info["altura"], trilha, zoom)
+    renderizar_python(origem, destino, enq, info, rapido=True)
+    print(f"rascunho com {len(zoom.ev)} zooms → {destino}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("trabalho", type=Path)
@@ -391,9 +420,14 @@ def main() -> None:
     ap.add_argument("--curta", choices=["repetir", "congelar", "velocidade"], default="repetir")
     ap.add_argument("--audio", choices=["mudo", "baixo", "auto"], default="auto")
     ap.add_argument("--cor-linha")
+    ap.add_argument("--previa", action="store_true",
+                    help="Aplica os zooms no rascunho do corte (rascunho_sem_zoom.mp4 → rascunho.mp4), para aprovar junto")
     a = ap.parse_args()
 
     trab = a.trabalho.resolve()
+    if a.previa:
+        previa_zoom(trab)
+        return
     origem = trab / "cortado.mp4"
     if not origem.exists():
         raise SystemExit("falta o cortado.mp4: faça o corte antes")

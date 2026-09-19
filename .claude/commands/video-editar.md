@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-editar
 description: Porta principal do editor. Edita um vídeo de pessoa falando do começo ao fim, com aprovação em cada etapa - escolhe o vídeo, o pacote (só cortar, cortar + legenda, completo ou personalizado), o estilo de edição (natural, dinâmica com zooms, acelerada) e o formato (original, vertical, os dois ou react); transcreve, corta pausas e erros, aplica zooms, cria animações (motion) sincronizadas com a fala, coloca legenda e salva em videos/Editados. Retoma um vídeo em andamento. Use para "editar vídeo", "editar meu vídeo", "cortar e legendar", "fazer o vídeo completo", "começar".
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, SendUserFile
 model: opus
 ---
 
@@ -34,16 +34,33 @@ As etapas ficam em `.claude/etapas/video-editar/`. Leia cada arquivo na hora de 
 
 Se o aluno mandou um vídeo pelo chat, copie para `videos/Para Editar/` (mantendo o nome) e use esse.
 
-Liste os vídeos da pasta:
+Liste só os vídeos que ainda precisam de edição (⚪ novos e 🟡 em andamento). Os 🟢 já editados ficam escondidos atrás da última opção, que só aparece se existir algum:
 
 ```
 Qual vídeo vamos editar?
 
 1. ⚪ gravação aula 3  (4:12, horizontal)
-2. 🟢 teste  (0:22, horizontal), já editado → teste_editado.mp4
+2. 🟡 gravação aula 2  (3:05, horizontal), corte concluído
+3. Visualizar também os vídeos já editados (2)
 
 Digite o número:
 ```
+
+Se o aluno escolher "Visualizar também os vídeos já editados", repita a lista com todos (os 🟢 no fim, com o nome do arquivo pronto: `🟢 teste (0:22, horizontal), já editado → teste_editado.mp4`), sem a opção extra.
+
+Se só houver um vídeo para editar e nenhum editado, confirme em vez de perguntar: `Vou editar "gravação aula 3" (4:12). 1. Isso / 2. Outro`.
+
+Se todos os vídeos da pasta já foram editados:
+
+```
+Todos os vídeos da pasta já foram editados.
+
+1. Visualizar os vídeos já editados (para refazer ou ajustar)
+2. Vou colocar um vídeo novo na pasta
+
+Digite o número:
+```
+Opção 2: mostre o caminho absoluto de `videos/Para Editar` e peça para avisar quando o vídeo estiver lá.
 
 Se a pasta estiver vazia:
 

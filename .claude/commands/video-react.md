@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-react
 description: Formato react - você e um vídeo de referência na mesma tela (referência em cima ou embaixo no vertical; lado a lado ou você no cantinho no horizontal), com escolha do trecho da referência e do áudio dela (mudo, baixo ou abaixando sozinho quando você fala), legenda na emenda. Use para "react", "reagir a um vídeo", "vídeo em cima e eu embaixo", "tela dividida", "dueto".
-allowed-tools: Read, Write, Edit, Bash, Glob
+allowed-tools: Read, Write, Edit, Bash, Glob, SendUserFile
 model: opus
 ---
 

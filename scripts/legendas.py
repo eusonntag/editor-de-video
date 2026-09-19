@@ -14,7 +14,9 @@ Uso:
   python -X utf8 scripts/legendas.py palavras.json --video base.mp4 --queimar final.mp4
   opções: --estilo dinamica|classica|caixa|palavra  --fonte "Montserrat Black"  --cor "#FFD400"
           --posicao baixo|centro  --margem-v 380  --centro-y 960  --tamanho 80  --max-palavras 3
+          --opcoes '{"escala": 1.2, "contorno": "grosso"}'  (chaves em OPCOES; a marca vale como padrão)
   galeria: python -X utf8 scripts/legendas.py palavras.json --video base.mp4 --galeria galeria.jpg [--em 4.2]
+           [--variar estilo|fonte|tamanho|cor|contorno|palavras|maiusculas|posicao|atual]
 """
 
 from __future__ import annotations
@@ -43,6 +45,36 @@ ESTILOS = {
                 "maiusculas": True, "destaque": False, "caixa": False, "escala": 1.35},
 }
 COR_PADRAO = "#FFD400"
+
+# nome amigável → família do TTF em assets/fontes (a versão mais pesada, que lê melhor em vídeo)
+FONTES_LEGENDA = {
+    "montserrat": ("Montserrat", "Montserrat Black"),
+    "poppins": ("Poppins", "Poppins Black"),
+    "inter": ("Inter", "Inter Black"),
+    "space-grotesk": ("Space Grotesk", "Space Grotesk"),
+    "playfair": ("Playfair Display", "Playfair Display Black"),
+}
+
+# opções que o aluno pode configurar (config/marca.json → legenda, ou estado.json → legenda_opcoes)
+OPCOES = {
+    "fonte": "montserrat | poppins | inter | space-grotesk | playfair",
+    "cor": "cor da palavra falada (#hex)",
+    "destaque": "true/false: pinta a palavra falada",
+    "cor_texto": "cor das letras (#hex, padrão branco)",
+    "cor_contorno": "cor do contorno (#hex, padrão preto)",
+    "contorno": "sem | fino | normal | grosso",
+    "fundo": "nenhum | tarja | translucido",
+    "cor_caixa": "cor da tarja (#hex)",
+    "escala": "tamanho relativo (1 = padrão; 0.8 pequena, 1.2 grande)",
+    "tamanho": "tamanho da letra em px (vence a escala)",
+    "max_palavras": "palavras na tela por vez",
+    "maiusculas": "true/false",
+    "animacao": "pop | nenhuma",
+    "posicao": "baixo | centro",
+    "subir": "fração da altura para subir a legenda (0.05 = 5%)",
+    "margem_v": "px da base da legenda até a borda de baixo",
+    "centro_y": "centro da legenda em px (react)",
+}
 
 
 def cor_ass(hex_cor: str, alfa: str = "00") -> str:
@@ -98,37 +130,70 @@ def agrupar(palavras: list[dict], max_palavras: int, max_chars: int, pausa: floa
     return blocos
 
 
+def fonte_familia(fonte: str | None) -> str | None:
+    if not fonte:
+        return None
+    chave = fonte.strip().lower().replace(" ", "-")
+    for k, (nome, familia) in FONTES_LEGENDA.items():
+        if chave in (k, nome.lower().replace(" ", "-")):
+            return familia
+    return fonte
+
+
 def gerar_ass(palavras: list[dict], largura: int, altura: int, estilo: str = "dinamica",
-              fonte: str | None = None, cor: str | None = None, posicao: str = "baixo",
+              fonte: str | None = None, cor: str | None = None, posicao: str | None = "baixo",
               tamanho: int | None = None, max_palavras: int | None = None,
               margem_v: int | None = None, centro_y: int | None = None,
-              cor_caixa: str | None = None) -> str:
+              cor_caixa: str | None = None, escala: float | None = None, maiusculas: bool | None = None,
+              destaque: bool | None = None, cor_texto: str | None = None, cor_contorno: str | None = None,
+              contorno: str | None = None, fundo: str | None = None, animacao: str | None = None,
+              subir: float | None = None) -> str:
     cfg = ESTILOS[estilo]
     retrato = altura > largura
-    fonte = fonte or cfg["fonte"]
+    fonte = fonte_familia(fonte) or cfg["fonte"]
     cor = cor or COR_PADRAO
     if tamanho is None:
-        tamanho = int(altura * (0.042 if retrato else 0.062) * cfg["escala"])
+        tamanho = int(altura * (0.042 if retrato else 0.062) * cfg["escala"] * float(escala or 1))
+    max_chars = cfg["max_chars"]
+    if max_palavras and max_palavras > cfg["max_palavras"]:
+        max_chars = max(max_chars, 6 * max_palavras + 4)
     max_palavras = max_palavras or cfg["max_palavras"]
+    maiusculas = cfg["maiusculas"] if maiusculas is None else bool(maiusculas)
+    com_destaque = cfg["destaque"] if destaque is None else bool(destaque)
+    fundo = fundo or ("tarja" if cfg["caixa"] else "nenhum")
+    pop_ligado = (animacao or ("nenhuma" if estilo == "classica" else "pop")) == "pop"
     if margem_v is None:
         margem_v = int(altura * (0.26 if retrato else 0.08))
-    alinhamento = 2 if posicao == "baixo" else 5
+    if subir:
+        margem_v += int(altura * float(subir))
+    alinhamento = 5 if posicao == "centro" else 2
     grosso = estilo in ("dinamica", "palavra")
-    contorno = max(3, tamanho // 12) if grosso else max(2, tamanho // 18)
+    espessura = contorno or ("normal" if grosso else "fino")
+    contorno = {"sem": 0, "fino": max(2, tamanho // 18), "normal": max(3, tamanho // 12),
+                "grosso": max(4, tamanho // 8)}.get(espessura, max(2, tamanho // 18))
     negrito = -1
 
     branco = "&H00FFFFFF"
-    destaque = cor_ass(cor)
-    texto_cor, contorno_cor, sombra = branco, "&H00000000", (0 if grosso else 1)
+    destaque_ass = cor_ass(cor)
+    texto_cor = cor_ass(cor_texto) if cor_texto else branco
+    contorno_cor = cor_ass(cor_contorno) if cor_contorno else "&H00000000"
+    sombra = 0 if grosso else 1
+    if espessura == "sem":
+        sombra = max(2, tamanho // 22)  # sem contorno: sombra suave para ler em fundo claro
     borda_estilo = 1
-    if cfg["caixa"]:
+    if fundo == "tarja":
         # tarja sólida: fundo na cor da caixa (branco por padrão), texto escuro ou claro conforme o fundo
-        fundo = cor_caixa or "#FFFFFF"
+        cor_fundo = cor_caixa or "#FFFFFF"
         borda_estilo, contorno, sombra = 3, max(8, tamanho // 5), 0
-        contorno_cor = cor_ass(fundo)
-        texto_cor = "&H00141414" if luminancia(fundo) > 0.55 else branco
-        if cor.lower() == fundo.lower():
-            destaque = "&H00141414"
+        contorno_cor = cor_ass(cor_fundo)
+        if not cor_texto:
+            texto_cor = "&H00141414" if luminancia(cor_fundo) > 0.55 else branco
+        if cor.lower() == cor_fundo.lower():
+            destaque_ass = "&H00141414"
+    elif fundo == "translucido":
+        # tarja escura semitransparente (estilo streaming)
+        borda_estilo, contorno, sombra = 3, max(8, tamanho // 5), 0
+        contorno_cor = cor_ass(cor_caixa or "#000000", "60")
     margem_h = int(largura * 0.08)
     cab = f"""[Script Info]
 ScriptType: v4.00+
@@ -145,7 +210,7 @@ Style: Leg,{fonte},{tamanho},{texto_cor},{texto_cor},{contorno_cor},&H80000000,{
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     pos = f"{{\\an5\\pos({largura // 2},{centro_y})}}" if centro_y is not None else ""
-    blocos = agrupar(palavras, max_palavras, cfg["max_chars"], pausa=0.45)
+    blocos = agrupar(palavras, max_palavras, max_chars, pausa=0.45)
     eventos: list[str] = []
     for bi, bloco in enumerate(blocos):
         inicio = bloco[0]["start"]
@@ -154,23 +219,24 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             prox = blocos[bi + 1][0]["start"]
             fim = prox if prox - bloco[-1]["end"] < 0.5 else min(fim, prox)
         textos = [limpar(w["text"]) for w in bloco]
-        if cfg["maiusculas"]:
+        if maiusculas:
             textos = [t.upper().rstrip(",;:") for t in textos]
-        if estilo == "palavra":
-            pop = "{\\fscx125\\fscy125\\t(0,110,\\fscx100\\fscy100)}"
+        if estilo == "palavra" and max_palavras == 1:
+            pop = "{\\fscx125\\fscy125\\t(0,110,\\fscx100\\fscy100)}" if pop_ligado else ""
             eventos.append(f"Dialogue: 0,{ts(inicio)},{ts(fim)},Leg,,0,0,0,,{pos}{pop}{textos[0].rstrip('.!?')}")
-        elif cfg["destaque"]:
+        elif com_destaque:
             volta = texto_cor
             for wi, w in enumerate(bloco):
                 s = inicio if wi == 0 else w["start"]
                 e = bloco[wi + 1]["start"] if wi + 1 < len(bloco) else fim
                 if e <= s:
                     continue
-                partes = [f"{{\\c{destaque}}}{t}{{\\c{volta}}}" if j == wi else t for j, t in enumerate(textos)]
-                pop = "{\\fscx112\\fscy112\\t(0,90,\\fscx100\\fscy100)}" if wi == 0 else ""
+                partes = [f"{{\\c{destaque_ass}}}{t}{{\\c{volta}}}" if j == wi else t for j, t in enumerate(textos)]
+                pop = "{\\fscx112\\fscy112\\t(0,90,\\fscx100\\fscy100)}" if wi == 0 and pop_ligado else ""
                 eventos.append(f"Dialogue: 0,{ts(s)},{ts(e)},Leg,,0,0,0,,{pos}{pop}{' '.join(partes)}")
         else:
-            eventos.append(f"Dialogue: 0,{ts(inicio)},{ts(fim)},Leg,,0,0,0,,{pos}{' '.join(textos)}")
+            pop = "{\\fscx112\\fscy112\\t(0,90,\\fscx100\\fscy100)}" if pop_ligado else ""
+            eventos.append(f"Dialogue: 0,{ts(inicio)},{ts(fim)},Leg,,0,0,0,,{pos}{pop}{' '.join(textos)}")
     return cab + "\n".join(eventos) + "\n"
 
 
@@ -223,42 +289,115 @@ def momento_com_fala(palavras: list[dict], video: Path | None = None) -> float:
     return quadro_bom(video, candidatos)
 
 
-def galeria(palavras: list[dict], video: Path, destino: Path, em: float | None, opcoes: dict) -> None:
-    """Uma imagem 2x2 com os 4 estilos sobre o mesmo quadro do vídeo."""
+VARIACOES = ("estilo", "fonte", "tamanho", "cor", "contorno", "palavras", "maiusculas", "posicao", "atual")
+# opções que dependem do estilo: na comparação de estilos cada um aparece do seu jeito
+DO_ESTILO = ("fonte", "max_palavras", "maiusculas", "fundo", "destaque", "contorno", "animacao")
+
+
+def variantes(tipo: str, estilo: str, opcoes: dict, marca: dict) -> list[tuple[str, str, dict]]:
+    """(rótulo, estilo, opções) de cada quadro da galeria."""
+    if tipo == "estilo":
+        base = {k: v for k, v in opcoes.items() if k not in DO_ESTILO}
+        return [(c["nome"], e, base) for e, c in ESTILOS.items()]
+    if tipo == "fonte":
+        return [(nome, estilo, {**opcoes, "fonte": k}) for k, (nome, _) in FONTES_LEGENDA.items()]
+    if tipo == "tamanho":
+        return [(nome, estilo, {**opcoes, "tamanho": None, "escala": e})
+                for nome, e in (("Pequena", 0.8), ("Média (padrão)", 1.0), ("Grande", 1.2), ("Gigante", 1.45))]
+    if tipo == "cor":
+        cores = [("Amarelo", "#FFD400"), ("Verde-limão", "#C4FF5E"), ("Azul-claro", "#3DD9FF"),
+                 ("Rosa", "#FF4FA3"), ("Laranja", "#FF8A00")]
+        da_marca = ((marca.get("cores") or {}).get("destaque") or "").strip()
+        if da_marca and da_marca.lower() not in (c.lower() for _, c in cores):
+            cores[-1] = ("Cor da marca", da_marca)
+        lista = [(n, estilo, {**opcoes, "cor": c, "destaque": True}) for n, c in cores]
+        return lista + [("Sem destaque", estilo, {**opcoes, "destaque": False})]
+    if tipo == "contorno":
+        sem_fundo = {**opcoes, "fundo": "nenhum"}
+        return [("Sem contorno", estilo, {**sem_fundo, "contorno": "sem"}),
+                ("Contorno fino", estilo, {**sem_fundo, "contorno": "fino"}),
+                ("Contorno normal", estilo, {**sem_fundo, "contorno": "normal"}),
+                ("Contorno grosso", estilo, {**sem_fundo, "contorno": "grosso"}),
+                ("Tarja escura", estilo, {**opcoes, "fundo": "translucido", "cor_caixa": None}),
+                ("Tarja branca", estilo, {**opcoes, "fundo": "tarja", "cor_caixa": None})]
+    if tipo == "palavras":
+        return [(n, estilo, {**opcoes, "max_palavras": q})
+                for n, q in (("1 palavra", 1), ("2 palavras", 2), ("3 palavras", 3), ("Frase (até 7)", 7))]
+    if tipo == "maiusculas":
+        return [("MAIÚSCULAS", estilo, {**opcoes, "maiusculas": True}),
+                ("Normal", estilo, {**opcoes, "maiusculas": False})]
+    if tipo == "posicao":
+        return [("Embaixo (automático)", estilo, {**opcoes, "posicao": "baixo", "subir": 0}),
+                ("Um pouco mais alto", estilo, {**opcoes, "posicao": "baixo", "subir": 0.06}),
+                ("Bem mais alto", estilo, {**opcoes, "posicao": "baixo", "subir": 0.14}),
+                ("Meio da tela", estilo, {**opcoes, "posicao": "centro", "centro_y": None})]
+    return [("Como vai ficar", estilo, opcoes)]
+
+
+def galeria(palavras: list[dict], video: Path, destino: Path, em: float | None, tipo: str, estilo: str,
+            opcoes: dict, marca: dict) -> None:
+    """Uma imagem com as variações lado a lado, sobre o mesmo quadro do vídeo."""
     largura, altura = dimensoes(video)
     t = em if em is not None else momento_com_fala(palavras, video)
+    lista = variantes(tipo, estilo, opcoes, marca)
+    n = len(lista)
+    colunas = 1 if n == 1 else (2 if n <= 4 else 3)
+    linhas = -(-n // colunas)
+    if largura >= altura:
+        esc = {1: 1280, 2: 960, 3: 720}[colunas]
+    else:
+        esc = {1: 720, 2: 540, 3: 400}[colunas]
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         quadro = tmp / "quadro.png"
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t:.3f}", "-i", str(video), "-frames:v", "1",
                         str(quadro)], check=True)
-        imgs = []
-        for i, estilo in enumerate(ESTILOS, start=1):
-            ass = tmp / f"{estilo}.ass"
-            ass.write_text(gerar_ass(palavras, largura, altura, estilo, **opcoes), encoding="utf-8-sig")
-            saida = tmp / f"{estilo}.png"
+        rotulados = []
+        for i, (rotulo, est, op) in enumerate(lista, start=1):
+            ass = tmp / f"v{i}.ass"
+            ass.write_text(gerar_ass(palavras, largura, altura, est, **op), encoding="utf-8-sig")
+            saida = tmp / f"v{i}.png"
             vf = f"setpts=PTS+{t:.3f}/TB,{_filtro_ass(ass)}"
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(quadro), "-vf", vf, "-frames:v", "1",
                             str(saida)], check=True, cwd=str(tmp))
-            imgs.append((saida, f"{i}. {ESTILOS[estilo]['nome']}"))
-        # rótulo em cada imagem e montagem 2x2 reduzida
-        esc = 960 if largura >= altura else 540
-        rotulados = []
-        for p, rotulo in imgs:
-            r = tmp / f"r_{p.name}"
-            rot = (f"scale={esc}:-2,drawtext=fontfile=Inter-900.ttf:text='{rotulo}':x=24:y=24:fontsize={esc // 18}:"
-                   "fontcolor=black:box=1:boxcolor=0xc4ff5e:boxborderw=14")
-            res = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(p), "-vf", rot, str(r)], cwd=FONTES)
+            texto = (rotulo if n == 1 else f"{i}. {rotulo}").replace(":", " ").replace("'", "")
+            r = tmp / f"r{i}.png"
+            rot = (f"scale={esc}:-2,drawtext=fontfile=Inter-900.ttf:text='{texto}':x=20:y=20:fontsize={max(18, esc // 20)}:"
+                   "fontcolor=black:box=1:boxcolor=0xc4ff5e:boxborderw=12")
+            res = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(saida), "-vf", rot, str(r)], cwd=FONTES)
             if res.returncode:
-                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(p), "-vf", f"scale={esc}:-2", str(r)], check=True)
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(saida), "-vf", f"scale={esc}:-2", str(r)],
+                               check=True)
             rotulados.append(r)
-        ent = []
-        for r in rotulados:
-            ent += ["-i", str(r)]
+        tw, th = dimensoes(rotulados[0])
+        while len(rotulados) < colunas * linhas:  # completa a última linha com um quadro preto
+            vazio = tmp / f"vazio{len(rotulados)}.png"
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"color=c=black:s={tw}x{th}",
+                            "-frames:v", "1", str(vazio)], check=True)
+            rotulados.append(vazio)
         destino.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["ffmpeg", "-v", "error", "-y", *ent, "-filter_complex",
-                        "[0][1]hstack[a];[2][3]hstack[b];[a][b]vstack", str(destino.resolve())], check=True)
-    print(f"galeria de legendas ({t:.1f}s) → {destino}")
+        if len(rotulados) == 1:
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(rotulados[0]), str(destino.resolve())], check=True)
+        else:
+            ent, filtro, fileiras = [], [], []
+            for r in rotulados:
+                ent += ["-i", str(r)]
+            for li in range(linhas):
+                idx = "".join(f"[{li * colunas + c}]" for c in range(colunas))
+                filtro.append(f"{idx}hstack=inputs={colunas}[l{li}]" if colunas > 1 else f"{idx}null[l{li}]")
+                fileiras.append(f"[l{li}]")
+            if linhas > 1:
+                filtro.append(f"{''.join(fileiras)}vstack=inputs={linhas}")
+            else:
+                filtro[-1] = filtro[-1].rsplit("[", 1)[0]
+            subprocess.run(["ffmpeg", "-v", "error", "-y", *ent, "-filter_complex", ";".join(filtro),
+                            str(destino.resolve())], check=True)
+    print(f"galeria de legendas ({tipo}, {t:.1f}s) → {destino}")
+
+
+def opcoes_da_marca(marca: dict) -> dict:
+    leg = marca.get("legenda") or {}
+    return {k: v for k, v in leg.items() if k in OPCOES and v not in ("", None)}
 
 
 def main() -> None:
@@ -271,29 +410,33 @@ def main() -> None:
     ap.add_argument("--fonte")
     ap.add_argument("--cor", help="Cor de destaque da palavra falada")
     ap.add_argument("--cor-caixa", help="Cor da tarja no estilo caixa")
-    ap.add_argument("--posicao", choices=["baixo", "centro"], default="baixo")
+    ap.add_argument("--posicao", choices=["baixo", "centro"])
     ap.add_argument("--tamanho", type=int)
     ap.add_argument("--max-palavras", type=int)
     ap.add_argument("--margem-v", type=int,
                     help="Distância da base da legenda até a borda de baixo (px). Padrão: 26%% da altura no vertical, 8%% no horizontal")
     ap.add_argument("--centro-y", type=int, help="Centraliza a legenda nesta altura (px), ex.: emenda do react")
-    ap.add_argument("--galeria", type=Path, help="Gera a imagem comparando os 4 estilos")
+    ap.add_argument("--opcoes", help="JSON com opções (chaves de OPCOES); vence a marca, perde para as opções acima")
+    ap.add_argument("--galeria", type=Path, help="Gera a imagem comparando variações")
+    ap.add_argument("--variar", choices=VARIACOES, default="estilo", help="O que muda entre os quadros da galeria")
     ap.add_argument("--em", type=float, help="Instante do quadro da galeria (s)")
     args = ap.parse_args()
 
     palavras = json.loads(args.palavras.read_text(encoding="utf-8"))
     marca = ler_marca()
-    leg_marca = marca.get("legenda", {})
-    cor = args.cor or leg_marca.get("cor") or COR_PADRAO
-    opcoes = {"fonte": args.fonte or leg_marca.get("fonte"), "cor": cor, "posicao": args.posicao,
-              "tamanho": args.tamanho, "max_palavras": args.max_palavras, "margem_v": args.margem_v,
-              "centro_y": args.centro_y, "cor_caixa": args.cor_caixa or leg_marca.get("cor_caixa")}
+    opcoes = opcoes_da_marca(marca)
+    if args.opcoes:
+        opcoes.update({k: v for k, v in json.loads(args.opcoes).items() if k in OPCOES and v not in ("", None)})
+    explicitas = {"fonte": args.fonte, "cor": args.cor, "cor_caixa": args.cor_caixa, "posicao": args.posicao,
+                  "tamanho": args.tamanho, "max_palavras": args.max_palavras, "margem_v": args.margem_v,
+                  "centro_y": args.centro_y}
+    opcoes.update({k: v for k, v in explicitas.items() if v is not None})
+    estilo = args.estilo or (marca.get("legenda") or {}).get("estilo") or "dinamica"
+
     if args.galeria:
-        opcoes["fonte"] = args.fonte  # cada estilo com a própria fonte na comparação
-        galeria(palavras, args.video, args.galeria, args.em, opcoes)
+        galeria(palavras, args.video, args.galeria, args.em, args.variar, estilo, opcoes, marca)
         return
 
-    estilo = args.estilo or leg_marca.get("estilo") or "dinamica"
     largura, altura = dimensoes(args.video)
     ass_txt = gerar_ass(palavras, largura, altura, estilo, **opcoes)
     ass_path = args.saida_ass or args.video.with_name("legendas.ass")

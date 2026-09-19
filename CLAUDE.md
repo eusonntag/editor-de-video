@@ -50,6 +50,7 @@ Etapas avulsas:
 
 Configuração e ajuda:
 - /video-marca: suas cores, fonte, logo e estilos padrão
+- /configurar-legenda: fonte, cores, tamanho e posição da legenda
 - /configurar-transcricao: trocar o serviço de transcrição
 - /configurar-editor-video: instalar ou consertar o editor
 - /video-ajuda: explicações e status dos seus vídeos
@@ -75,7 +76,18 @@ Regras: verbo no infinitivo; até 120 s em segundos ("cerca de 45 segundos"), ac
 
 - Rode os comandos em silêncio. O aluno vê só o anúncio, o resultado em linguagem simples e o **caminho absoluto** do arquivo, como texto copiável: `C:\Users\…\videos\Editados\minha-aula_editado.mp4` (no Mac, `/Users/…/videos/Editados/…`).
 - Se algo falhar, explique em uma frase o que aconteceu e o que fazer ("A transcrição falhou porque a internet caiu. 1. Tentar de novo / 2. Transcrever no computador").
-- Imagens de prévia (cortes, cards, legenda, recorte vertical): sempre mostre o caminho absoluto para o aluno abrir. Você mesmo abra (Read) e confira antes de mostrar.
+- Prévias (rascunho do corte, cards, galerias, legenda, recorte vertical): você mesmo abre (Read) e confere antes, e mostra dentro da conversa (veja a regra abaixo).
+
+---
+
+## PRÉVIAS DENTRO DA CONVERSA
+
+O aluno não deve precisar sair da conversa para ver uma prévia.
+
+- Toda imagem ou vídeo de prévia vai pela ferramenta `SendUserFile` com `display: "render"` e `status: "normal"`, **antes** da pergunta de aprovação, com uma legenda curta (`caption`), ex.: "Rascunho do corte com os zooms". Galerias, `previa.jpg`, `conferencia.jpg`, `cor-comparacao.jpg`, `verificacao.jpg` e o `rascunho.mp4` entram aqui.
+- Abaixo da pergunta, deixe o caminho absoluto numa linha discreta (`Arquivo: C:\…ascunho.mp4`), para quem preferir abrir fora.
+- Se a ferramenta `SendUserFile` não existir nesta sessão (terminal, VS Code), mostre só o caminho absoluto, como texto copiável.
+- Vídeo final entregue: mostre também pelo `SendUserFile`, junto com o caminho.
 
 ---
 

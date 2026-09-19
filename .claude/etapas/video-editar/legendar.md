@@ -10,7 +10,7 @@ Senão: `⏳ Passo 1/2: preparar a galeria de legendas.` → `{PY} editor.py gal
 
 ```
 Escolha o estilo da legenda (no seu próprio vídeo):
-{caminho absoluto de galeria-legendas.jpg}
+(imagem da galeria dentro da conversa; caminho numa linha discreta)
 
 1. Dinâmica: poucas palavras, a palavra falada em destaque (Reels/TikTok)
 2. Clássica: frase inteira, discreta (YouTube, aulas)
@@ -23,6 +23,8 @@ Digite o número:
 Depois: `Quer usar esse estilo em todos os vídeos? 1. Sim / 2. Só neste` → Sim: grave `legenda.estilo` em `config/marca.json`.
 
 Cor de destaque: padrão amarelo (#FFD400) ou `legenda.cor` da marca. Só pergunte se o aluno pedir.
+
+As opções finas salvas pelo `/configurar-legenda` (fonte, tamanho, contorno, tarja, palavras por vez, posição, animação) entram sozinhas no `legendar`. Se o aluno pedir algo desse tipo aqui ("legenda com tarja", "fonte diferente"), use o fluxo do `/configurar-legenda` para este vídeo (`--video <id>`) e volte.
 
 ## 2. Gerar
 

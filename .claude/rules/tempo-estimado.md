@@ -13,7 +13,9 @@ Medido em 2026-09-18 num PC com Ryzen 5 4600G (6 núcleos), 24 GB de RAM, sem pl
 | Transcrição no computador (Whisper local) | cerca de 1× D; na 1ª vez + 3 a 10 minutos de download do modelo | |
 | Transcrição via ElevenLabs | cerca de 20 a 60 segundos | |
 | Análise de cor | cerca de 30 segundos | |
-| Montar o rascunho do corte | cerca de 0,3× D + 10 segundos | |
+| Montar o rascunho do corte (com os zooms) | cerca de 0,6× D + 10 segundos | medido: 45 s de bruto (28 s depois do corte) levaram 33 s |
+| Atualizar o rascunho depois de desligar zooms | cerca de 0,3× D + 5 segundos | medido: 28 s levaram 9 s |
+| Galeria de opções da legenda (`/configurar-legenda`) | cerca de 5 a 10 segundos | |
 | Corte final | cerca de 0,7× D + 5 segundos | 22 s de vídeo levaram 15 s |
 | Formato horizontal sem zoom | cerca de 0,3× D | |
 | Formato com zoom, vertical | cerca de 1× D | 14 s levaram 15 s |
@@ -31,4 +33,4 @@ Medido em 2026-09-18 num PC com Ryzen 5 4600G (6 núcleos), 24 GB de RAM, sem pl
 Regra de unidade: até 120 segundos, fale em segundos ("cerca de 45 segundos"); acima, em minutos ("3 a 5 minutos"). Para vídeos longos, arredonde para cima.
 
 Exemplo: vídeo de 5 min (D = 300 s, 4 min depois do corte), pacote completo, só horizontal:
-transcrição 10 s + rascunho 1,5 min + corte 3,5 min + zoom 4 min + motion 16 min + legenda 2 min ≈ **27 a 30 minutos**.
+transcrição 10 s + rascunho 3 min + corte 3,5 min + zoom 4 min + motion 16 min + legenda 2 min ≈ **29 a 32 minutos**.

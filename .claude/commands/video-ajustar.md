@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-ajustar
 description: Aplica mudanças num vídeo já editado, refazendo só a etapa afetada - pedidos livres ("tira o card 3", "legenda mais pra baixo", "manter a frase da piada", "corrige o nome", "sem zoom no começo", "troca o estilo dos cards") ou as alterações feitas no painel visual (botão Aplicar alterações, arquivo ajustes.json). Use para "ajustar", "mudar", "corrigir", "tira", "coloca", "apliquei no painel".
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, SendUserFile
 model: opus
 ---
 

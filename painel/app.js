@@ -3,10 +3,10 @@
 "use strict";
 
 const S = {
-  videos: [], dados: null, id: null, aba: "visao",
+  videos: [], dados: null, id: null, aba: "cortes",
   visao: "editado", formato: null, pps: 0, pendentes: [], atualizado: null, motionFormato: null,
 };
-const ABAS = [["visao", "Visão geral"], ["cortes", "Cortes"], ["motion", "Motion"], ["legendas", "Legendas"], ["exportar", "Exportar"]];
+const ABAS = [["cortes", "Cortes"], ["motion", "Motion"], ["legendas", "Legendas"], ["exportar", "Exportar"]];
 const NOME_ETAPA = { transcricao: "Transcrição", corte: "Corte", layout: "Formato e zoom", motion: "Motion", legenda: "Legenda", final: "Finalização" };
 const NOME_FORMATO = { horizontal: "Horizontal", vertical: "Vertical", react: "React" };
 const NOME_ESTILO_EDICAO = { natural: "natural", dinamica: "dinâmica", acelerada: "acelerada" };
@@ -91,7 +91,7 @@ $("#bt-aplicar").onclick = async () => {
 /* ---------------- rotas ---------------- */
 function lerRota() {
   const p = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
-  if (p[0] === "video" && p[1]) return { id: p[1], aba: p[2] || "visao" };
+  if (p[0] === "video" && p[1]) return { id: p[1], aba: ABAS.some((a) => a[0] === p[2]) ? p[2] : "cortes" };
   return { id: null, aba: "inicio" };
 }
 async function irPara() {
@@ -132,9 +132,9 @@ function desenhar() {
   } else {
     const aba = ABAS.find((a) => a[0] === S.aba) || ABAS[0];
     cr.innerHTML = `<a href="#/">Vídeos</a><span class="sep">/</span>${esc(S.id)}<span class="sep">/</span><span class="now">${aba[1]}</span>`;
-    const f = { visao: paginaVisao, cortes: paginaCortes, motion: paginaMotion, legendas: paginaLegendas, exportar: paginaExportar }[aba[0]];
+    const f = { cortes: paginaCortes, motion: paginaMotion, legendas: paginaLegendas, exportar: paginaExportar }[aba[0]];
     pg.innerHTML = f();
-    const pos = { cortes: montarCortes, motion: montarMotion, legendas: montarLegendas, exportar: montarExportar, visao: () => {} }[aba[0]];
+    const pos = { cortes: montarCortes, motion: montarMotion, legendas: montarLegendas, exportar: montarExportar }[aba[0]];
     pos();
   }
   desenharPendentes();
@@ -190,7 +190,7 @@ function paginaInicio() {
 }
 
 /* ---------------- visão geral do vídeo ---------------- */
-function paginaVisao() {
+function blocoEstatisticas() {
   const D = S.dados, e = D.estado, et = e.etapas || {};
   const cards = (D.roteiro && D.roteiro.cards || []).filter((c) => c.ativo !== false).length;
   const zooms = (D.dinamica && D.dinamica.eventos || []).filter((z) => z.ativo !== false).length;
@@ -205,10 +205,7 @@ function paginaVisao() {
   const rem = D.resumo ? D.resumo.frases_removidas : [];
   const imgs = Object.entries(D.formatos).map(([f, x]) => x.imagens.verificacao || x.imagens.conferencia ? `
       <div><span class="card-label">${NOME_FORMATO[f]}</span><img class="previa" src="${x.imagens.verificacao || x.imagens.conferencia}?v=${Date.now()}"></div>` : "").join("");
-  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">01</span>${esc(D.id)}</h1>
-      <p class="page-sub">${esc(D.status.join(" "))}</p></div>
-      <div class="page-meta">${e.nome_final ? `nome final<br><strong>${esc(e.nome_final)}</strong>` : ""}</div></div>
-    ${e.etapa_atual ? `<div class="callout">O Claude está trabalhando neste vídeo agora: ${esc(e.etapa_atual.texto)} (passo ${e.etapa_atual.passo} de ${e.etapa_atual.total})</div>` : ""}
+  return `<div class="section-h" id="estatisticas"><span>Estatísticas deste vídeo</span><span>${esc(D.status.join(" "))}${e.nome_final ? ` · ${esc(e.nome_final)}` : ""}</span></div>
     <div class="grid grid-4">
       <div class="card glow"><span class="card-label">Antes → depois</span><div class="metric">${fmt(D.bruto && D.bruto.duracao)} → ${fmt(D.cortado && D.cortado.duracao)}</div>
         <div class="metric-sub">${D.resumo ? Math.max(0, Math.round(D.resumo.silencio_removido)) + " s de pausas removidas" : ""}</div></div>
@@ -261,12 +258,14 @@ function fonteEditado() {
 }
 function paginaCortes() {
   const D = S.dados;
-  if (!D.edl) return placeholder("Ainda não há cortes", "O painel mostra a linha do tempo depois do corte. Digite /video-editar no Claude.");
+  if (!D.edl) return placeholder("Ainda não há cortes", "O painel mostra a linha do tempo depois do corte. Digite /video-editar no Claude.") + blocoEstatisticas();
   if (S.visao === "editado" && !fonteEditado().length) S.visao = "original";
   const fontes = fonteEditado();
   if (!fontes.find((f) => f[0] === S.formato)) S.formato = fontes[0] && fontes[0][0];
-  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">02</span>Cortes e linha do tempo</h1>
+  const e = D.estado;
+  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">01</span>Cortes e linha do tempo</h1>
       <p class="page-sub">Riscado é o que foi cortado. Clique numa frase para manter ou cortar; dê dois cliques numa palavra para corrigir a grafia. Clique na linha do tempo para ir ao ponto do vídeo.</p></div></div>
+    ${e.etapa_atual ? `<div class="callout">O Claude está trabalhando neste vídeo agora: ${esc(e.etapa_atual.texto)} (passo ${e.etapa_atual.passo} de ${e.etapa_atual.total})</div>` : ""}
     <div class="editor-top">
       <div class="player">
         <video id="player" preload="metadata" playsinline controls></video>
@@ -285,7 +284,8 @@ function paginaCortes() {
       <div class="tl-head"><span class="chip ${S.visao === "editado" ? "active" : "rust"}"><span class="dot"></span>${S.visao === "editado" ? "vídeo editado" : "vídeo original, com o que foi cortado"}</span>
         <label class="chip">zoom <input type="range" id="tl-zoom" min="0" max="100" value="${S.ppsSlider || 0}"></label></div>
       <div class="tl-body"><div class="tl-labels" id="tl-labels"></div><div class="tl-scroll" id="tl-scroll"><div class="tl-inner" id="tl-inner"></div></div></div>
-    </div>`;
+    </div>
+    ${blocoEstatisticas()}`;
 }
 function montarCortes() {
   const D = S.dados;
@@ -502,7 +502,7 @@ function paginaMotion() {
   const f = S.motionFormato;
   const x = f && D.formatos[f];
   const estiloAtual = (temPend("estilo-motion") || {}).estilo || D.roteiro.estilo || "escuro";
-  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">03</span>Motion</h1>
+  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">02</span>Motion</h1>
       <p class="page-sub">Edite os textos, troque o ícone, ligue ou desligue cards e escolha o estilo. As mudanças viram um pedido para o Claude refazer as animações.</p></div>
       ${fs.length > 1 ? `<div class="seg" id="seg-mformato">${fs.map((k) => `<button data-f="${k}" class="${k === f ? "on" : ""}">${NOME_FORMATO[k]}</button>`).join("")}</div>` : ""}</div>
     <span class="card-label">Estilo</span>
@@ -591,7 +591,7 @@ function paginaLegendas() {
   if (!D.palavras || !D.palavras.length) return placeholder("Sem legenda ainda", "A legenda usa a transcrição do vídeo cortado. Faça o corte primeiro.");
   const atual = (temPend("estilo-legenda") || {}).estilo || (D.estado.escolhas || {}).legenda_estilo || "dinamica";
   const gal = Object.values(D.formatos).map((x) => x.imagens["galeria-legendas"]).find(Boolean);
-  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">04</span>Legendas</h1>
+  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">03</span>Legendas</h1>
       <p class="page-sub">Escolha o estilo e corrija palavras que saíram erradas. A correção vale para todas as vezes que a palavra aparece.</p></div></div>
     <span class="card-label">Estilo</span>
     <div class="estilos">${ESTILOS_LEGENDA.map(([k, n, d]) => `<button class="estilo-op ${k === atual ? "on" : ""}" data-e="${k}"><b>${n}</b><span>${d}</span></button>`).join("")}</div>
@@ -638,7 +638,7 @@ function montarLegendas() {
 function paginaExportar() {
   const D = S.dados;
   const fs = Object.entries(D.finais || {});
-  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">05</span>Exportar</h1>
+  return `<div class="page-head"><div><h1 class="page-title"><span class="accent">04</span>Exportar</h1>
       <p class="page-sub">Os vídeos prontos ficam na pasta Editados, com o nome que você escolheu.</p></div>
       <button class="btn btn-claude" id="bt-pasta">Abrir a pasta</button></div>
     ${fs.length ? fs.map(([f, x]) => `<div class="card">

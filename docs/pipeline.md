@@ -27,7 +27,8 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
   edit/transcripts/<id>.json          transcrição por palavra (cache: nunca retranscrever)
   edit/edl.json, edit/revisao.md      cortes (video-use) e revisão com alertas ⚠
   edit/correcoes.json                 {"errado": "Certo"} aplicado nas palavras
-  rascunho.mp4, cortado.mp4           corte em baixa qualidade (aprovação) e final
+  rascunho.mp4, cortado.mp4           corte em baixa qualidade com zooms (aprovação) e final
+  rascunho_sem_zoom.mp4               rascunho sem zoom (base para refazer a prévia dos zooms)
   palavras.json                       palavras na linha do tempo cortada
   dinamica.json                       zooms (punch, enfase, aproximacao)
   rosto.json, onda_*.json             rosto detectado e picos de áudio (painel)
@@ -52,18 +53,19 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 | Texto | `texto <id>` | frases com tempo (mostrar ao aluno para achar nomes errados) |
 | Base do corte | `cortes-base <id> --estilo natural\|dinamica\|acelerada` | `edl.json` + `revisao.md` (acelerada: pausa 0,2 s) |
 | Tempos | `palavras <id> --ver 10 25` | palavras da ORIGEM num intervalo (para cortes parciais) |
-| Rascunho | `cortar <id> --rascunho` | `rascunho.mp4` + `palavras.json` + zooms do estilo |
+| Rascunho | `cortar <id> --rascunho` | `rascunho.mp4` (720p, já com os zooms) + `rascunho_sem_zoom.mp4` + `palavras.json` + zooms do estilo |
 | Corte final | `cortar <id>` | `cortado.mp4`; mantém os zooms aprovados se o EDL não mudou |
 | Resumo | `corte-resumo <id> [--json]` | antes → depois, frases removidas, pausas |
 | Cor | `analisar-imagem <id> [--comparar]`, `cor <id> --filtro "…"` / `--remover` | refazer o corte depois |
-| Zooms | `dinamica <id> [--estilo X] [--listar] [--desligar 2,5]` | numeração = lista mostrada |
+| Zooms | `dinamica <id> [--estilo X] [--listar] [--desligar 2,5] [--previa]` | numeração = lista mostrada; `--previa` refaz o rascunho com os zooms atuais |
 | Layout | `layout <id> horizontal\|vertical\|react [--sem-zoom] [--seguir sim\|nao] [--centro-x N]` | `<formato>/base.mp4` |
 | React | `layout <id> react --referencia <arq> [--orientacao vertical\|horizontal] [--posicao cima\|baixo\|lado\|pip] [--proporcao 50\|40] [--inicio s] [--fim s] [--curta repetir\|congelar\|velocidade] [--audio mudo\|baixo\|auto]` | |
 | Conferência | `conferir-layout <id> <formato>` | `<formato>/conferencia.jpg` (3 quadros) |
 | Referência | `baixar-referencia <url> [--nome x]` | instala o yt-dlp na 1ª vez (pedir confirmação antes) |
 | Ícones | `icones buscar "termos em português"` | 5 nomes Phosphor |
 | Motion | `motion <id> validar\|montar\|previa\|galeria\|render --formato F [--estilo X] [--icones Y] [--tipo estilos\|icones]` | |
-| Legenda | `galeria-legendas <id> --formato F`, `legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N]` | |
+| Legenda | `galeria-legendas <id> --formato F [--variar estilo\|fonte\|tamanho\|cor\|contorno\|palavras\|maiusculas\|posicao\|atual]`, `legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N] [--tamanho px]` | galeria: `galeria-legendas[-<variar>].jpg` |
+| Config. da legenda | `legenda-config [--video <id>] [--definir k=v …] [--limpar k,k\|tudo] [--json]` | sem `--video`: `config/marca.json` → `legenda` (todos os vídeos); com `--video`: `estado.json` → `legenda_opcoes` |
 | Entrega | `nome <id>` (sugestão), `nome <id> --verificar "x" --formatos a,b`, `finalizar <id> --nome x [--formatos a,b] [--substituir\|--nova-versao]` | código 3 = nome já existe |
 | Verificação | `verificar <id> --formato F` | duração, áudio, `verificacao.jpg` |
 | Painel | `painel [--video <id>] [--parar]` | http://localhost:8765 |
@@ -126,6 +128,7 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 ## Legendas
 
 - Estilos: `dinamica` (padrão, 1–3 palavras, maiúsculas, palavra falada em cor), `classica` (aulas/YouTube), `caixa` (tarja), `palavra` (uma por vez).
+- Opções finas (`/configurar-legenda`): `fonte` (montserrat, poppins, inter, space-grotesk, playfair), `cor`, `destaque`, `cor_texto`, `cor_contorno`, `contorno` (sem, fino, normal, grosso), `fundo` (nenhum, tarja, translucido), `cor_caixa`, `escala`, `tamanho`, `max_palavras`, `maiusculas`, `animacao` (pop, nenhuma), `posicao` (baixo, centro), `subir`. Ordem: estilo < marca < vídeo < opção explícita do `legendar`. Lista completa: `legenda-config --json`.
 - Fontes TTF em `assets/fontes` (Montserrat, Inter, Poppins, Playfair Display, Space Grotesk): iguais no Windows e no Mac.
 - Posição vem do `layout.json`: horizontal 8% da altura; vertical abaixo do queixo e acima de y ≈ 1570 (interface do Reels/TikTok); react na emenda.
 - Termos errados: `edit/correcoes.json` = `{"errado": "Certo"}`; aplicado no próximo `cortar` (ou `palavras <id>`), depois refazer a legenda.

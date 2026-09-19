@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-cortar
 description: Corta um vídeo de pessoa falando - tira silêncios, pausas longas, hesitações, frases erradas e repetidas (mantendo a última versão), com estilo de edição natural, dinâmica (zoom a cada corte e nas frases importantes) ou acelerada (ritmo de Reels). Correção de cor opcional quando a imagem estiver escura ou azulada. Use para "cortar o vídeo", "tirar as pausas", "tirar os erros", "limpar a gravação", "só cortar".
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, SendUserFile
 model: opus
 ---
 

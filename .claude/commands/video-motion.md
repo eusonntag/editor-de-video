@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-motion
 description: Adiciona ou refaz as animações (motion graphics) de um vídeo já cortado - cards com títulos, listas com checks, números animados, passo a passo, frases em destaque, palavra-chave e chamada final, sincronizados com a fala, com ícones e no estilo da marca. Mostra a prévia antes de renderizar. Use para "colocar animação", "motion", "cards", "refazer as animações", "trocar o estilo dos cards", "mais cards".
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, SendUserFile
 model: opus
 ---
 

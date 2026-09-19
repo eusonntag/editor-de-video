@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-verticalizar
 description: Cria a versão vertical 9:16 (Reels, TikTok, Shorts) de um vídeo horizontal já cortado - recorte centralizado no rosto (acompanha se a pessoa se mexer), zooms suaves, cards reposicionados na faixa de cima e legenda abaixo do queixo, longe da interface do app. Use para "versão vertical", "fazer para Reels", "TikTok", "Shorts", "9:16", "em pé".
-allowed-tools: Read, Write, Edit, Bash, Glob
+allowed-tools: Read, Write, Edit, Bash, Glob, SendUserFile
 model: sonnet
 ---
 
