@@ -30,6 +30,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comum import info_video, ler_marca, rodar  # noqa: E402
+from desfoque import Desfoque, ler as ler_desfoque  # noqa: E402
 from rosto import Trilha, rastrear  # noqa: E402
 
 
@@ -168,7 +169,7 @@ class Enquadrador:
 # ---------------------------------------------------------------- render ----
 
 def renderizar_python(origem: Path, destino: Path, enq: Enquadrador, info: dict, com_audio: bool = True,
-                      rapido: bool = False) -> None:
+                      rapido: bool = False, desfoque: Desfoque | None = None) -> None:
     import cv2
 
     W, H = info["largura"], info["altura"]
@@ -207,6 +208,8 @@ def renderizar_python(origem: Path, destino: Path, enq: Enquadrador, info: dict,
                 break
             quadro = np.frombuffer(buf, dtype=np.uint8).reshape(th, tw, 3)
             t = n / info["fps"]
+            if desfoque:
+                quadro = desfoque.aplicar(quadro, t)
             M = enq.matriz(t, fator)
             saida = cv2.warpAffine(quadro, M, (enq.ow, enq.oh), flags=cv2.INTER_CUBIC | cv2.WARP_INVERSE_MAP,
                                    borderMode=cv2.BORDER_REPLICATE)
@@ -257,7 +260,8 @@ def _atempo(f: float) -> str:
     return ",".join(partes)
 
 
-def montar_react(trab: Path, a, info: dict, trilha: Trilha, zoom: Zoom, destino: Path) -> dict:
+def montar_react(trab: Path, a, info: dict, trilha: Trilha, zoom: Zoom, destino: Path,
+                 desfoque: Desfoque | None = None) -> dict:
     ref = Path(a.referencia).resolve()
     if not ref.exists():
         raise SystemExit(f"vídeo de referência não encontrado: {ref}")
@@ -294,7 +298,7 @@ def montar_react(trab: Path, a, info: dict, trilha: Trilha, zoom: Zoom, destino:
         enq = Enquadrador(info["largura"], info["altura"], voce_area[2], voce_area[3], trilha, zoom,
                           ancora_y=0.42)
         voce = tmp / "voce.mp4"
-        renderizar_python(trab / "cortado.mp4", voce, enq, info)
+        renderizar_python(trab / "cortado.mp4", voce, enq, info, desfoque=desfoque)
 
         # 2. trecho da referência, já no tamanho da área (preencher e cortar as sobras)
         ini = max(0.0, a.inicio or 0.0)
@@ -389,8 +393,9 @@ def previa_zoom(trab: Path) -> None:
     din = trab / "dinamica.json"
     eventos = json.loads(din.read_text(encoding="utf-8")).get("eventos", []) if din.exists() else []
     zoom = Zoom(eventos)
+    desfoque = Desfoque(ler_desfoque(trab))
     destino = trab / "rascunho.mp4"
-    if not zoom.ev:
+    if not zoom.ev and not desfoque:
         import shutil
 
         shutil.copyfile(origem, destino)
@@ -399,8 +404,8 @@ def previa_zoom(trab: Path) -> None:
     info = info_video(origem)
     trilha = Trilha(rastrear(origem, trab / "rosto_rascunho.json"))
     enq = Enquadrador(info["largura"], info["altura"], info["largura"], info["altura"], trilha, zoom)
-    renderizar_python(origem, destino, enq, info, rapido=True)
-    print(f"rascunho com {len(zoom.ev)} zooms → {destino}")
+    renderizar_python(origem, destino, enq, info, rapido=True, desfoque=desfoque)
+    print(f"rascunho com {len(zoom.ev)} zooms e {len(desfoque)} desfoques → {destino}")
 
 
 def main() -> None:
@@ -438,6 +443,7 @@ def main() -> None:
     eventos = [] if a.sem_zoom or not din.exists() else json.loads(din.read_text(encoding="utf-8")).get("eventos", [])
     # o vertical já é um recorte ampliado da webcam: zoom mais contido para não perder nitidez
     zoom = Zoom(eventos, 1.0 if a.formato == "horizontal" else 0.6)
+    desfoque = Desfoque(ler_desfoque(trab))
     pasta = trab / a.formato
     pasta.mkdir(exist_ok=True)
     destino = pasta / "base.mp4"
@@ -446,7 +452,7 @@ def main() -> None:
     if a.formato == "react":
         if not a.referencia:
             raise SystemExit("o formato react precisa de --referencia <vídeo>")
-        layout = montar_react(trab, a, info, trilha, zoom, destino)
+        layout = montar_react(trab, a, info, trilha, zoom, destino, desfoque)
     else:
         if a.formato == "vertical":
             ow, oh = 1080, 1920
@@ -454,10 +460,10 @@ def main() -> None:
             ow, oh = tamanho_horizontal(info)
         enq = Enquadrador(info["largura"], info["altura"], ow, oh, trilha, zoom, seguir=seguir, centro_x=a.centro_x)
         mesmo_quadro = abs(enq.bw - info["largura"]) < 2 and abs(enq.bh - info["altura"]) < 2
-        if not zoom.ev and mesmo_quadro:
+        if not zoom.ev and not desfoque and mesmo_quadro:
             reencodar_gop(origem, destino, info, ow, oh)
         else:
-            renderizar_python(origem, destino, enq, info)
+            renderizar_python(origem, destino, enq, info, desfoque=desfoque)
         rosto = enq.rosto_na_saida()
         layout = {"formato": a.formato, "largura": ow, "altura": oh,
                   "areas": {"voce": [0, 0, ow, oh]}, "costura": None,
@@ -468,9 +474,10 @@ def main() -> None:
                   else {"alinhamento": "baixo", "margem_v": int(oh * 0.08)}}
 
     layout["zooms"] = len(zoom.ev)
+    layout["desfoques"] = len(desfoque)
     layout["sem_rosto"] = bool(dados_rosto.get("sem_rosto"))
     (pasta / "layout.json").write_text(json.dumps(layout, indent=1, ensure_ascii=False), encoding="utf-8")
-    print(f"layout {a.formato}: {layout['largura']}x{layout['altura']}, {len(zoom.ev)} zooms → {destino}")
+    print(f"layout {a.formato}: {layout['largura']}x{layout['altura']}, {len(zoom.ev)} zooms, {len(desfoque)} desfoques → {destino}")
     if layout["sem_rosto"]:
         print("aviso: nenhum rosto detectado; enquadramento centralizado")
 

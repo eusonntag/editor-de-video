@@ -1,7 +1,7 @@
 ---
 name: editor-video:video-painel
 description: Abre o painel visual de edição no navegador (estilo CapCut) - linha do tempo com o que foi cortado, zooms, cards de motion e legenda, player sincronizado, transcrição clicável para manter ou cortar frases, edição dos textos dos cards e correção de palavras. Os ajustes voltam para o Claude pelo /video-ajustar. Use para "abrir o painel", "ver a linha do tempo", "revisar no painel", "ver o que foi cortado". "/video-painel fechar" encerra o painel.
-allowed-tools: Read, Bash, SendUserFile
+allowed-tools: Read, Bash, SendUserFile, mcp__Claude_Browser__navigate, mcp__Claude_Browser__tabs_context
 model: sonnet
 ---
 
@@ -38,16 +38,21 @@ Digite o número:
 
 `🔍 Próximo passo: abrir o painel de edição. Tempo estimado: cerca de 5 segundos.`
 
-`{PY} editor.py painel --video <id>` (ou sem `--video` para a visão geral). Ele reaproveita o painel se já estiver aberto.
+Ligue o painel sem abrir o navegador do computador: `{PY} editor.py painel --sem-abrir --video <id>` (ou sem `--video` para a visão geral). Ele reaproveita o painel se já estiver aberto.
 
-`✅ Concluído: painel aberto. Endereço: http://localhost:8765/#/video/{id}`
+Depois mostre o painel **aqui dentro do editor do Claude**: se a ferramenta `mcp__Claude_Browser__navigate` existir nesta sessão (app do Claude), chame-a com `http://localhost:8765/#/video/<id com espaços como %20>` (ou `http://localhost:8765/` na visão geral); ela abre o painel no navegador embutido ao lado da conversa e, se já estiver aberto, só troca de vídeo. Se a ferramenta não existir (terminal, VS Code), rode o mesmo comando sem `--sem-abrir`, que abre o navegador do computador.
+
+`✅ Concluído: painel aberto aqui ao lado. Endereço: http://localhost:8765/#/video/{id}` (se abriu no navegador do computador, diga "painel aberto no navegador").
 
 ## Passo 3. Como usar (até 5 linhas)
 
 ```
 - A linha do tempo mostra o que foi cortado (riscado) e o que ficou.
-- Clique numa frase riscada da transcrição para mantê-la (ou numa normal para cortar).
-- Dá para editar os textos dos cards, ligar e desligar zooms e corrigir palavras da legenda.
+- Busque palavras ou frases na transcrição; escolha selecionar por frases ou por palavras (nas palavras, arraste para pegar várias).
+- Clique numa parte riscada para mantê-la (ou numa normal para cortar) e use "Prévia" para assistir com as marcações antes de aplicar.
+- Na linha do tempo, clique num zoom, card ou desfoque para encurtar (arraste as bordas), cortar ao meio ou desligar.
+- "Desfocar área": desenhe sobre a imagem o que precisa ficar escondido (e-mail, nomes, dados).
+- Dá para editar os textos dos cards e corrigir palavras da legenda.
 - No fim, clique em "Aplicar alterações" e volte aqui digitando /video-ajustar.
 ```
 
@@ -58,4 +63,4 @@ O painel fecha sozinho depois de 2 horas sem uso. Para fechar antes: `/video-pai
 ## Se não abrir
 
 - Porta ocupada: `{PY} editor.py painel --porta 8766 --video <id>`.
-- O navegador não abriu sozinho: mostre o endereço para copiar.
+- O painel não apareceu ao lado da conversa: mostre o endereço para copiar e colar no navegador.

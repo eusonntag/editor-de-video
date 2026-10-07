@@ -218,6 +218,7 @@ def dados_video(vid: str) -> dict:
         "cortes_editado": _cortes_editado(t, edl),
         "resumo": resumo,
         "dinamica": C.ler_json(t / "dinamica.json"),
+        "desfoque": C.ler_json(t / "desfoque.json", {"regioes": []}),
         "roteiro": C.ler_json(t / "motion" / "roteiro.json"),
         "onda_original": C.ler_json(t / "onda_original.json"),
         "onda_cortado": C.ler_json(t / "onda_cortado.json"),

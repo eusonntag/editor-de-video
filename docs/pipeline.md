@@ -31,6 +31,7 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
   rascunho_sem_zoom.mp4               rascunho sem zoom (base para refazer a prévia dos zooms)
   palavras.json                       palavras na linha do tempo cortada
   dinamica.json                       zooms (punch, enfase, aproximacao)
+  desfoque.json                       áreas borradas: inicio/fim (s, vídeo cortado) e x,y,w,h (fração do quadro)
   rosto.json, onda_*.json             rosto detectado e picos de áudio (painel)
   <formato>/base.mp4, layout.json     layout com zooms; áreas, rosto e posição da legenda
   <formato>/animado.mp4               com motion
@@ -58,6 +59,8 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 | Resumo | `corte-resumo <id> [--json]` | antes → depois, frases removidas, pausas |
 | Cor | `analisar-imagem <id> [--comparar]`, `cor <id> --filtro "…"` / `--remover` | refazer o corte depois |
 | Zooms | `dinamica <id> [--estilo X] [--listar] [--desligar 2,5] [--previa]` | numeração = lista mostrada; `--previa` refaz o rascunho com os zooms atuais |
+| Desfoque | `desfoque <id> [--listar] [--adicionar --inicio S --fim S --area x,y,l,a [--rotulo T]] [--remover N,N] [--limpar] [--previa]` | `desfoque.json`; invalida layout, motion, legenda e final (refazer o layout) |
+| Ajustes do painel | `ajustes-tempo <id>` | aplica de `ajustes.json`: `zoom_tempo`, `zoom_novo`, `card_tempo`, `desfoque_*`; lista o que falta fazer à mão |
 | Layout | `layout <id> horizontal\|vertical\|react [--sem-zoom] [--seguir sim\|nao] [--centro-x N]` | `<formato>/base.mp4` |
 | React | `layout <id> react --referencia <arq> [--orientacao vertical\|horizontal] [--posicao cima\|baixo\|lado\|pip] [--proporcao 50\|40] [--inicio s] [--fim s] [--curta repetir\|congelar\|velocidade] [--audio mudo\|baixo\|auto]` | |
 | Conferência | `conferir-layout <id> <formato>` | `<formato>/conferencia.jpg` (3 quadros) |
@@ -102,6 +105,13 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 - natural: sem zoom. dinamica: punch a cada corte (alternando 100%/112%) + ênfase (~120%) a cada ~12 s. acelerada: pausa 0,2 s no corte, punch em todo corte, ênfase a cada ~7 s, aproximação lenta nos trechos > 4 s.
 - Zooms ancorados no rosto, curvas suaves. No vertical e no react a intensidade cai para 60% (nitidez).
 - Ajuste fino: editar `dinamica.json` (campo `ativo`, `inicio`, `fim`, `intensidade`) e refazer o layout.
+
+## Desfoque
+
+- Regiões em `desfoque.json`, na linha do tempo do `cortado.mp4`; área em frações do quadro (vale em qualquer formato e resolução).
+- O `layout.py` borra a área no quadro de origem ANTES do zoom e do recorte (inclui o rascunho e o react). Sem zoom e com desfoque, o horizontal usa o render quadro a quadro (cerca de 0,8× D) em vez da recodificação rápida.
+- Desfoque Gaussiano proporcional ao tamanho da área (texto de qualquer tamanho fica ilegível); conferir sempre um quadro dentro do trecho.
+- No vertical, uma área fora do recorte não aparece (nada a fazer).
 
 ## Layout
 

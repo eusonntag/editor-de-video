@@ -19,16 +19,20 @@ Regra de ouro: **edição cirúrgica**. Mude só o que foi pedido e refaça só 
 
 | Pedido | O que mudar | Refazer depois |
 |---|---|---|
-| Manter ou cortar uma frase/trecho (`manter_trecho`, `cortar_trecho`) | `edit/edl.json` (regras de `docs/pipeline.md`) | corte → layout de cada formato → motion (revise os tempos do roteiro pelo `palavras.json` novo) → legenda → finalizar |
+| Manter ou cortar uma frase, palavra ou trecho (`manter_trecho`, `cortar_trecho`; o painel manda `inicio`/`fim` na ORIGEM, sendo uma frase ou só algumas palavras) | `edit/edl.json` (regras de `docs/pipeline.md`) | corte → layout de cada formato → motion (revise os tempos do roteiro pelo `palavras.json` novo) → legenda → finalizar |
 | Corrigir palavra (`corrigir_palavra`) | `edit/correcoes.json` e `{PY} editor.py palavras <id>` | legenda (e o card, se a palavra estiver num card) → finalizar |
 | Ligar/desligar zoom (`zoom`) | `dinamica.json` → `ativo` (ou `{PY} editor.py dinamica <id> --desligar N`) | layout → motion render → legenda → finalizar |
 | Texto, ícone ou card ligado/desligado (`card_texto`, `card_ativo`) | `motion/roteiro.json` | motion montar + prévia → render → legenda → finalizar |
 | Estilo dos cards (`estilo_motion`) | `roteiro.json` → `estilo`/`icones` | motion montar + prévia → render → legenda → finalizar |
 | Legenda: estilo, cor, tamanho, posição (`estilo_legenda`) | opções do `editor.py legendar` | legenda → finalizar |
+| Tempo de zoom ou card (`zoom_tempo`, `zoom_novo`, `card_tempo`): encurtar, cortar ao meio, dividir | `{PY} editor.py ajustes-tempo <id>` aplica sozinho no `dinamica.json` e no `roteiro.json` (tempos na linha do tempo do vídeo CORTADO) | zoom: layout → motion render → legenda → finalizar. Só card: motion montar + prévia → render → legenda → finalizar |
+| Desfocar uma área da tela (`desfoque_novo`, `desfoque_tempo`, `desfoque_ativo`, ou pedido livre: "desfoca o e-mail", "esconde os dados") | Do painel: `{PY} editor.py ajustes-tempo <id>`. Pedido livre: extraia um quadro do `cortado.mp4` no segundo citado (`ffmpeg -ss S -i cortado.mp4 -frames:v 1`), abra com Read, estime `x,y,largura,altura` em frações de 0 a 1 e use `{PY} editor.py desfoque <id> --adicionar --inicio S --fim S --area x,y,l,a --rotulo "e-mail"`. Gere o rascunho (`--previa`), abra e confira que o texto ficou ilegível antes de seguir | layout de cada formato → motion render → legenda → finalizar (o desfoque entra no layout, antes do zoom e do recorte, então vale em todos os formatos) |
 | Cor da imagem | `{PY} editor.py cor <id> --filtro …` | corte → tudo depois |
 | Versão vertical: recorte | `layout <id> vertical --centro-x / --seguir` | layout vertical → motion vertical → legenda vertical → finalizar vertical |
 
 A mudança vale para todos os formatos já feitos, a não ser que o aluno fale de um só.
+
+`ajustes-tempo` só aplica o que é número (tempo de zoom e card, desfoques) e lista em "fazer à mão" o que sobrou (cortes, textos, estilos): faça esses pelas linhas acima. Corte de palavras soltas: confira com `{PY} editor.py palavras <id> --ver INICIO FIM` e deixe 30 a 200 ms de folga entre as palavras.
 
 ## 3. Resumo e confirmação
 

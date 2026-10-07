@@ -19,6 +19,7 @@ Medido em 2026-09-18 num PC com Ryzen 5 4600G (6 núcleos), 24 GB de RAM, sem pl
 | Corte final | cerca de 0,7× D + 5 segundos | 22 s de vídeo levaram 15 s |
 | Formato horizontal sem zoom | cerca de 0,3× D | |
 | Formato com zoom, vertical | cerca de 1× D | 14 s levaram 15 s |
+| Formato horizontal com desfoque (e zoom) | cerca de 0,8× D | medido: 16 s levaram 13 s; sem zoom e sem desfoque continua 0,3× D |
 | React (você + referência) | cerca de 2× D + 10 segundos | medido: 14 s levaram 33 s |
 | Motion: montar e gerar a prévia dos cards | cerca de 20 a 40 segundos | medido: montar 5 s + prévia 10 s |
 | Motion: galeria de estilos | cerca de 30 a 60 segundos | medido: 29 s (estilos), 50 s (ícones) |

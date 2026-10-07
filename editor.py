@@ -24,6 +24,8 @@ Corte
   analisar-imagem <id> [--comparar]     cor/exposição; sugere correção
   cor <id> (--filtro "..." | --remover)
   dinamica <id> [--estilo natural|dinamica|acelerada] [--listar] [--desligar N,N] [--previa]
+  desfoque <id> [--listar] [--adicionar --inicio S --fim S --area X,Y,L,A [--rotulo T]] [--remover N] [--limpar] [--previa]
+  ajustes-tempo <id>                    aplica do painel: tempo dos zooms/cards e desfoques (ajustes.json)
 Formato, motion e legenda
   layout <id> horizontal|vertical|react [--sem-zoom] [opções do react]
   conferir-layout <id> <formato>
@@ -454,6 +456,125 @@ def cmd_dinamica(a) -> None:
         print(f"✅ rascunho atualizado com os zooms: {t / 'rascunho.mp4'}")
 
 
+def _desfoques(vid: str) -> tuple[Path, dict]:
+    arq = trab(vid) / "desfoque.json"
+    return arq, C.ler_json(arq, {"regioes": []})
+
+
+def _listar_desfoques(regs: list[dict]) -> None:
+    if not regs:
+        print("nenhum desfoque")
+        return
+    for i, r in enumerate(regs, 1):
+        estado = "" if r.get("ativo", True) else " (desligado)"
+        print(f"  {i}. {C.fmt_tempo(r['inicio'])}–{C.fmt_tempo(r['fim'])}  área x={r['x']:.2f} y={r['y']:.2f} "
+              f"larg={r['w']:.2f} alt={r['h']:.2f}  {r.get('rotulo', '')}{estado}")
+
+
+def cmd_desfoque(a) -> None:
+    """Áreas da tela borradas (dados pessoais). Tempos na linha do tempo do vídeo CORTADO; área em frações 0 a 1."""
+    vid = C.id_video(a.id)
+    t = trab(vid)
+    arq, d = _desfoques(vid)
+    regs = d["regioes"]
+    mudou = False
+    if a.limpar:
+        regs.clear()
+        mudou = True
+    if a.remover:
+        for n in sorted({int(x) for x in a.remover.split(",") if x.strip()}, reverse=True):
+            if 1 <= n <= len(regs):
+                regs.pop(n - 1)
+                mudou = True
+    if a.adicionar:
+        if a.inicio is None or a.fim is None or not a.area:
+            raise SystemExit("✗ Para adicionar, informe --inicio, --fim e --area x,y,largura,altura (frações de 0 a 1)")
+        try:
+            x, y, w, h = (float(v) for v in a.area.split(","))
+        except ValueError:
+            raise SystemExit("✗ --area precisa de 4 números: x,y,largura,altura (ex.: 0.10,0.40,0.30,0.06)")
+        if not (0 <= x < 1 and 0 <= y < 1 and 0 < w <= 1 and 0 < h <= 1 and a.fim > a.inicio):
+            raise SystemExit("✗ Área ou tempo inválidos (valores entre 0 e 1; fim maior que início)")
+        regs.append({"inicio": round(a.inicio, 2), "fim": round(a.fim, 2), "x": round(x, 4), "y": round(y, 4),
+                     "w": round(min(w, 1 - x), 4), "h": round(min(h, 1 - y), 4), "rotulo": a.rotulo or "", "ativo": True})
+        mudou = True
+    if mudou:
+        regs.sort(key=lambda r: r["inicio"])
+        C.gravar_json(arq, d)
+        C.desmarcar_a_partir(vid, "layout")  # o desfoque entra no formato: refazer layout, motion, legenda e finalização
+    if a.listar or mudou or not a.previa:
+        _listar_desfoques(regs)
+    if mudou:
+        print("refaça o formato (layout) para o desfoque entrar no vídeo")
+    if a.previa:
+        _rascunho_com_zoom(t)
+        print(f"✅ rascunho atualizado com o desfoque: {t / 'rascunho.mp4'}")
+
+
+def cmd_ajustes_tempo(a) -> None:
+    """Aplica do ajustes.json (painel) o que é só números: tempo de zooms e cards, desfoques."""
+    vid = C.id_video(a.id)
+    t = trab(vid)
+    aj = C.ler_json(t / "ajustes.json")
+    if not aj:
+        raise SystemExit("✗ Não há ajustes do painel para este vídeo")
+    itens = aj.get("itens", [])
+    din_p, rot_p = t / "dinamica.json", t / "motion" / "roteiro.json"
+    din, rot = C.ler_json(din_p), C.ler_json(rot_p)
+    arq, d = _desfoques(vid)
+    regs = d["regioes"]
+    feitos, mexeu_din, mexeu_rot, mexeu_desf = [], False, False, False
+    novos_desf = []
+    for it in itens:
+        tipo = it.get("tipo")
+        if tipo == "zoom_tempo" and din and 0 <= it["indice"] < len(din["eventos"]):
+            ev = din["eventos"][it["indice"]]
+            ev["inicio"], ev["fim"] = round(it["inicio"], 2), round(it["fim"], 2)
+            mexeu_din = True
+        elif tipo == "zoom_novo" and din:
+            din["eventos"].append({"tipo": it.get("tipo_zoom", "enfase"), "inicio": round(it["inicio"], 2),
+                                   "fim": round(it["fim"], 2), "intensidade": it.get("intensidade", 1.12), "ativo": True})
+            mexeu_din = True
+        elif tipo == "card_tempo" and rot:
+            for c in rot["cards"]:
+                if c["id"] == it["card"]:
+                    c["inicio"], c["fim"] = round(it["inicio"], 2), round(it["fim"], 2)
+                    mexeu_rot = True
+        elif tipo == "desfoque_tempo" and 0 <= it["indice"] < len(regs):
+            regs[it["indice"]]["inicio"], regs[it["indice"]]["fim"] = round(it["inicio"], 2), round(it["fim"], 2)
+            mexeu_desf = True
+        elif tipo == "desfoque_ativo" and 0 <= it["indice"] < len(regs):
+            regs[it["indice"]]["ativo"] = bool(it["ativo"])
+            mexeu_desf = True
+        elif tipo == "desfoque_novo":
+            x, y, w, h = it["area"]
+            novos_desf.append({"inicio": round(it["inicio"], 2), "fim": round(it["fim"], 2), "x": round(x, 4),
+                               "y": round(y, 4), "w": round(w, 4), "h": round(h, 4),
+                               "rotulo": it.get("rotulo", ""), "ativo": True})
+            mexeu_desf = True
+        else:
+            continue
+        feitos.append(tipo)
+    regs.extend(novos_desf)
+    if mexeu_din:
+        din["eventos"].sort(key=lambda e: e["inicio"])
+        C.gravar_json(din_p, din)
+    if mexeu_rot:
+        C.gravar_json(rot_p, rot)
+    if mexeu_desf:
+        regs.sort(key=lambda r: r["inicio"])
+        C.gravar_json(arq, d)
+    if mexeu_din or mexeu_desf:
+        C.desmarcar_a_partir(vid, "layout")
+    elif mexeu_rot:
+        C.desmarcar_a_partir(vid, "motion")
+    print(f"aplicados: {len(feitos)} ({', '.join(sorted(set(feitos))) or 'nenhum'})")
+    print("refazer: " + ("layout → motion → legenda → finalizar" if (mexeu_din or mexeu_desf)
+                         else "motion → legenda → finalizar" if mexeu_rot else "nada"))
+    resto = sorted({i.get("tipo", "?") for i in itens} - set(feitos))
+    print("fazer à mão: " + ", ".join(resto) if resto else "todos aplicados")
+
+
 # ------------------------------------------------------ formato / motion / legenda ----
 
 def cmd_layout(a, extras: list[str]) -> None:
@@ -792,13 +913,17 @@ def cmd_painel(a) -> None:
     if not vivo():
         C.TRABALHO.mkdir(parents=True, exist_ok=True)
         log = open(C.TRABALHO / "painel.log", "w", encoding="utf-8")
-        flags = {}
+        cmd = [sys.executable, "-X", "utf8", str(C.RAIZ / "scripts" / "painel_servidor.py"), "--porta", str(porta)]
+        saida = {"stdout": log, "stderr": log, "stdin": subprocess.DEVNULL}
         if os.name == "nt":
-            flags["creationflags"] = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+            # sai do "job" do programa que chamou: sem isso o painel fecha junto com ele e o vídeo para de tocar
+            base_flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+            try:
+                p = subprocess.Popen(cmd, creationflags=base_flags | 0x01000000, **saida)  # CREATE_BREAKAWAY_FROM_JOB
+            except OSError:
+                p = subprocess.Popen(cmd, creationflags=base_flags, **saida)
         else:
-            flags["start_new_session"] = True
-        p = subprocess.Popen([sys.executable, "-X", "utf8", str(C.RAIZ / "scripts" / "painel_servidor.py"),
-                              "--porta", str(porta)], stdout=log, stderr=log, stdin=subprocess.DEVNULL, **flags)
+            p = subprocess.Popen(cmd, start_new_session=True, **saida)
         pid_arq.write_text(str(p.pid), encoding="utf-8")
         for _ in range(40):
             if vivo():
@@ -923,6 +1048,12 @@ def main() -> None:
     p = sub.add_parser("dinamica"); p.add_argument("id"); p.add_argument("--estilo", choices=["natural", "dinamica", "acelerada"])
     p.add_argument("--listar", action="store_true"); p.add_argument("--desligar")
     p.add_argument("--previa", action="store_true", help="refaz o rascunho do corte com os zooms atuais")
+    p = sub.add_parser("desfoque"); p.add_argument("id"); p.add_argument("--listar", action="store_true")
+    p.add_argument("--adicionar", action="store_true"); p.add_argument("--inicio", type=float); p.add_argument("--fim", type=float)
+    p.add_argument("--area", help="x,y,largura,altura em frações de 0 a 1 do quadro"); p.add_argument("--rotulo")
+    p.add_argument("--remover", help="números da lista, separados por vírgula"); p.add_argument("--limpar", action="store_true")
+    p.add_argument("--previa", action="store_true", help="refaz o rascunho do corte com os desfoques atuais")
+    p = sub.add_parser("ajustes-tempo"); p.add_argument("id")
     p = sub.add_parser("layout"); p.add_argument("id"); p.add_argument("formato", choices=["horizontal", "vertical", "react"]); p.add_argument("--sem-zoom", action="store_true")
     p = sub.add_parser("conferir-layout"); p.add_argument("id"); p.add_argument("formato", choices=["horizontal", "vertical", "react"])
     p = sub.add_parser("baixar-referencia"); p.add_argument("url"); p.add_argument("--nome")
@@ -953,7 +1084,8 @@ def main() -> None:
         "videos": cmd_videos, "estado": cmd_estado, "nome": cmd_nome, "transcrever": cmd_transcrever,
         "custo": cmd_custo, "texto": cmd_texto, "cortes-base": cmd_cortes_base, "palavras": cmd_palavras,
         "cortar": cmd_cortar, "corte-resumo": cmd_corte_resumo, "analisar-imagem": cmd_analisar_imagem,
-        "cor": cmd_cor, "dinamica": cmd_dinamica, "conferir-layout": cmd_conferir_layout,
+        "cor": cmd_cor, "dinamica": cmd_dinamica, "desfoque": cmd_desfoque, "ajustes-tempo": cmd_ajustes_tempo,
+        "conferir-layout": cmd_conferir_layout,
         "baixar-referencia": cmd_baixar_referencia, "motion": cmd_motion, "legendar": cmd_legendar,
         "galeria-legendas": cmd_galeria_legendas, "legenda-config": cmd_legenda_config, "finalizar": cmd_finalizar, "verificar": cmd_verificar,
         "painel": cmd_painel, "liberar-espaco": cmd_liberar_espaco, "exemplo": cmd_exemplo, "chave": cmd_chave,
