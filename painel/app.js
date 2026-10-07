@@ -494,7 +494,7 @@ function alternarFrase(i) {
   const ja = pendSobrepostos(f.s, f.e);
   if (ja.length) ja.forEach((p) => pend(null, p._chave));
   else pend({ tipo: f.k ? "cortar_trecho" : "manter_trecho", inicio: f.s, fim: f.e, texto: f.texto }, "trecho-" + f.s.toFixed(2));
-  aposMarcar();
+  aposMarcar(Math.min(f.s, ...ja.map((p) => p.inicio)), Math.max(f.e, ...ja.map((p) => p.fim)));
 }
 function alternarPalavras(a, b) {
   const W = S.dados.palavras_origem;
@@ -502,6 +502,7 @@ function alternarPalavras(a, b) {
   if (!sel.length) return;
   frasesOrigem();
   const ja = pendSobrepostos(sel[0].s, sel[sel.length - 1].e);
+  const t0 = Math.min(sel[0].s, ...ja.map((p) => p.inicio)), t1 = Math.max(sel[sel.length - 1].e, ...ja.map((p) => p.fim));
   if (ja.length) ja.forEach((p) => pend(null, p._chave));
   else {
     let corrida = [];
@@ -514,9 +515,30 @@ function alternarPalavras(a, b) {
     for (const w of sel) { if (corrida.length && corrida[0].k !== w.k) fechar(); corrida.push(w); }
     fechar();
   }
-  aposMarcar();
+  aposMarcar(t0, t1);
 }
-function aposMarcar() { desenharTranscricao(); desenharTimeline(null); pintarBusca(false); }
+/* Depois de marcar: só as palavras do trecho e a faixa do vídeo mudam (redesenhar tudo deixava o clique lento) */
+function aposMarcar(t0, t1) {
+  const spans = S._spans, W = S.dados.palavras_origem;
+  if (spans && spans.length === W.length) {
+    for (const w of W) if (w.e >= t0 - 0.01 && w.s <= t1 + 0.01) spans[w.g].className = classePalavra(w);
+    pintarBusca(false);
+  } else desenharTranscricao();
+  atualizarTrilhaVideo();
+}
+function pendDaPalavra(w) {
+  const m = (w.s + w.e) / 2;
+  let achado = null;
+  for (const p of S.pendentes) if ((p.tipo === "cortar_trecho" || p.tipo === "manter_trecho") && m >= p.inicio - 0.001 && m <= p.fim + 0.001) achado = p;
+  return achado;
+}
+function classePalavra(w) {
+  const nucleo = nucleoDe(w.t).toLowerCase();
+  const pc = temPend("corr-" + nucleo);
+  const certo = pc ? pc.certo : (S.dados.correcoes || {})[nucleo];
+  const pd = pendDaPalavra(w);
+  return ["palavra", w.k ? "" : "cortada", certo ? "corrigida" : "", pd ? (pd.tipo === "manter_trecho" ? "pend-manter" : "pend-cortar") : ""].join(" ");
+}
 function desenharTranscricao() {
   const fr = frasesOrigem();
   const corr = S.dados.correcoes || {};
@@ -527,15 +549,14 @@ function desenharTranscricao() {
       const nucleo = nucleoDe(w.t).toLowerCase();
       const pc = temPend("corr-" + nucleo);
       const certo = pc ? pc.certo : corr[nucleo];
-      const pd = S.pendentes.filter((p) => (p.tipo === "cortar_trecho" || p.tipo === "manter_trecho") && (w.s + w.e) / 2 >= p.inicio - 0.001 && (w.s + w.e) / 2 <= p.fim + 0.001).pop();
-      const cls = [f.k ? "" : "cortada", certo ? "corrigida" : "", pd ? (pd.tipo === "manter_trecho" ? "pend-manter" : "pend-cortar") : ""].join(" ");
-      return `<span class="palavra ${cls}" data-g="${w.g}" title="${certo ? "vira: " + esc(certo) : ""}">${esc(w.t)}</span>`;
+      return `<span class="${classePalavra(w)}" data-g="${w.g}" title="${certo ? "vira: " + esc(certo) : ""}">${esc(w.t)}</span>`;
     }).join(" ");
     return `<span class="tempo-frase" data-s="${f.s}">${fmt(f.s)}</span><span class="frase" data-i="${f.i}">${palavras}</span> `;
   }).join("");
+  S._spans = box.querySelectorAll(".palavra");
   box.querySelectorAll(".tempo-frase").forEach((el) => (el.onclick = () => irParaOriginal(+el.dataset.s)));
   const W = S.dados.palavras_origem;
-  let baixo = null, timer = null;
+  let baixo = null, ultimo = null;
   const fraseDe = (g) => fr.find((f) => f.w.some((w) => w.g === g));
   box.onmousedown = (ev) => { const p = ev.target.closest(".palavra"); baixo = p ? +p.dataset.g : null; };
   box.onmouseup = (ev) => {
@@ -543,19 +564,21 @@ function desenharTranscricao() {
     const ini = baixo; baixo = null;
     if (!p || ini == null || ev.detail > 1) return;
     const fim = +p.dataset.g;
-    clearTimeout(timer);
+    ultimo = null;
     if (S.modoSel === "palavra") {
       if (ev.shiftKey && S.ancora != null) { alternarPalavras(Math.min(S.ancora, fim), Math.max(S.ancora, fim)); return; }
       if (fim !== ini) { alternarPalavras(Math.min(ini, fim), Math.max(ini, fim)); S.ancora = fim; return; }
-      timer = setTimeout(() => { S.ancora = fim; alternarPalavras(fim, fim); }, 220);
+      S.ancora = fim; alternarPalavras(fim, fim);
+      ultimo = () => alternarPalavras(fim, fim);
     } else {
       const f = fraseDe(ini);
       if (!f || f !== fraseDe(fim)) return;
-      timer = setTimeout(() => alternarFrase(f.i), 220);
+      alternarFrase(f.i);
+      ultimo = () => alternarFrase(f.i);
     }
   };
   box.ondblclick = (ev) => {
-    clearTimeout(timer);
+    if (ultimo) { ultimo(); ultimo = null; } // o 1º clique do duplo já marcou: desfaz
     const sp = ev.target.closest(".palavra");
     if (!sp) return;
     const nucleo = nucleoDe(W[+sp.dataset.g].t);
@@ -632,7 +655,9 @@ function selecionar(k, id, ir) {
   S.sel = { k, id };
   const it = achaItem(k, id);
   if (ir && it) $("#player").currentTime = Math.max(0, it.inicio + 0.05);
-  desenharTimeline(null); desenharBarraSel(true);
+  document.querySelectorAll(".bloco.edit.sel").forEach((b) => b.classList.remove("sel"));
+  document.querySelectorAll(".bloco.edit").forEach((b) => { if (b.dataset.k === k && b.dataset.id === id) b.classList.add("sel"); });
+  desenharBarraSel(true);
 }
 function desenharBarraSel(forcar) {
   const el = $("#tl-sel");
@@ -746,7 +771,8 @@ function atualizarDesfoques(t) {
     for (const it of itensTL()) {
       if ((it.k !== "d" && it.k !== "dn") || !it.ativo || t < it.inicio || t >= it.fim) continue;
       const [x, y, w, hh] = it.area;
-      h += `<div class="desf-ao-vivo ${S.sel && S.sel.k === it.k && S.sel.id === it.id ? "sel" : ""}" style="left:${r.x + x * r.w}px;top:${r.y + y * r.h}px;width:${w * r.w}px;height:${hh * r.h}px"></div>`;
+      const raio = Math.max(1.5, Math.max(4, 0.12 * Math.min(w * v.videoWidth, hh * v.videoHeight)) * r.w / v.videoWidth); // igual ao desfoque.py
+      h += `<div class="desf-ao-vivo ${S.sel && S.sel.k === it.k && S.sel.id === it.id ? "sel" : ""}" style="left:${r.x + x * r.w}px;top:${r.y + y * r.h}px;width:${w * r.w}px;height:${hh * r.h}px;backdrop-filter:blur(${raio.toFixed(1)}px);-webkit-backdrop-filter:blur(${raio.toFixed(1)}px)"></div>`;
     }
   }
   if (box._h !== h) { box._h = h; box.querySelectorAll(".desf-ao-vivo").forEach((n) => n.remove()); box.insertAdjacentHTML("afterbegin", h); }
@@ -782,22 +808,7 @@ function desenharTimeline(dur) {
     trilhas.push(["Busca", "", b]);
   }
   if (originalLike()) {
-    const R = S.visao === "previa" ? edlVirtual() : D.edl;
-    const pendM = S.pendentes.filter((p) => p.tipo === "manter_trecho");
-    const cortado = (a, b) => {
-      const dentro = Wo.filter((w) => { const m = (w.s + w.e) / 2; return m >= a - 0.02 && m <= b + 0.02; });
-      const txt = dentro.length ? "✂ " + dentro.map((w) => w.t).join(" ") : `pausa ${(b - a).toFixed(1)}s`;
-      const pm = S.visao !== "previa" && pendM.some((p) => p.inicio < b && p.fim > a);
-      return bloco("cortado" + (pm ? " pendente-manter" : ""), a, b, txt);
-    };
-    let v = "", ant = 0;
-    R.forEach((r) => {
-      if (r.s - ant > 0.05) v += cortado(ant, r.s);
-      v += bloco("mantido", r.s, r.e, "");
-      ant = r.e;
-    });
-    if (dur - ant > 0.05) v += cortado(ant, dur);
-    trilhas.push(["Vídeo", "", v]);
+    trilhas.push(["Vídeo", "video", htmlTrilhaVideo(dur)]);
     trilhas.push(["Áudio", "onda", `<canvas id="onda"></canvas>`]);
   } else {
     const cortes = D.cortes_editado || [];
@@ -805,7 +816,7 @@ function desenharTimeline(dur) {
     let v = "";
     for (let i = 0; i < lim.length - 1; i++) v += bloco("mantido", lim[i], lim[i + 1], `trecho ${i + 1}`);
     v += cortes.map((c) => `<div class="corte-marca" style="left:${c * S.pps}px"></div>`).join("");
-    trilhas.push(["Vídeo", "", v]);
+    trilhas.push(["Vídeo", "video", v]);
     trilhas.push(["Áudio", "onda", `<canvas id="onda"></canvas>`]);
     const itens = itensTL();
     const z = itens.filter((i) => i.k === "z" || i.k === "zn");
@@ -836,7 +847,8 @@ function desenharTimeline(dur) {
   $("#tl-labels").innerHTML = trilhas.map(([n, c]) => `<div class="tl-label ${c}">${n}</div>`).join("");
   $("#tl-inner").style.width = W + "px";
   $("#tl-inner").innerHTML = trilhas.map(([, c, h]) => `<div class="tl-track ${c}">${h}</div>`).join("") + `<div class="agulha" id="agulha"></div>`;
-  desenharOnda(originalLike() ? D.onda_original : D.onda_cortado);
+  desenharOnda();
+  sc.onscroll = () => { if (!S._ondaPendente) { S._ondaPendente = true; requestAnimationFrame(() => { S._ondaPendente = false; desenharOnda(); }); } };
   $("#tl-inner").onmousedown = iniciarArrasto;
   $("#tl-inner").onclick = (e) => {
     const b = e.target.closest(".bloco.edit");
@@ -847,17 +859,50 @@ function desenharTimeline(dur) {
   const v = $("#player");
   if (v) { const a = $("#agulha"); if (a) a.style.left = (v.currentTime || 0) * S.pps + "px"; }
 }
-function desenharOnda(onda) {
-  const cv = $("#onda");
-  if (!cv || !onda) return;
-  const w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
-  cv.width = w * dpr; cv.height = h * dpr;
+/* Faixa "Vídeo" das visões Original e Prévia: mantido x cortado (muda a cada marcação) */
+function htmlTrilhaVideo(dur) {
+  const D = S.dados, Wo = D.palavras_origem || [];
+  const R = S.visao === "previa" ? edlVirtual() : D.edl;
+  const pendM = S.pendentes.filter((p) => p.tipo === "manter_trecho");
+  const bloco = (cls, s, e, txt) => `<div class="bloco ${cls}" style="left:${s * S.pps}px;width:${Math.max(2, (e - s) * S.pps)}px" title="${esc(txt)}">${esc(txt)}</div>`;
+  let iw = 0; // palavras em ordem: anda junto com os trechos (sem varrer tudo a cada corte)
+  const cortado = (a, b) => {
+    while (iw < Wo.length && (Wo[iw].s + Wo[iw].e) / 2 < a - 0.02) iw++;
+    const dentro = [];
+    for (let j = iw; j < Wo.length && (Wo[j].s + Wo[j].e) / 2 <= b + 0.02; j++) dentro.push(Wo[j].t);
+    const txt = dentro.length ? "✂ " + dentro.join(" ") : `pausa ${(b - a).toFixed(1)}s`;
+    const pm = S.visao !== "previa" && pendM.some((p) => p.inicio < b && p.fim > a);
+    return bloco("cortado" + (pm ? " pendente-manter" : ""), a, b, txt);
+  };
+  let v = "", ant = 0;
+  R.forEach((r) => {
+    if (r.s - ant > 0.05) v += cortado(ant, r.s);
+    v += bloco("mantido", r.s, r.e, "");
+    ant = r.e;
+  });
+  if (dur - ant > 0.05) v += cortado(ant, dur);
+  return v;
+}
+function atualizarTrilhaVideo() {
+  if (!originalLike()) return; // no editado a faixa não muda até aplicar
+  const tr = document.querySelector(".tl-track.video");
+  if (tr && S._dur) tr.innerHTML = htmlTrilhaVideo(S._dur);
+}
+/* Onda do áudio: só a parte visível (a linha do tempo inteira pode ter mais de 100 mil px) */
+function desenharOnda() {
+  const cv = $("#onda"), sc = $("#tl-scroll");
+  const onda = originalLike() ? S.dados.onda_original : S.dados.onda_cortado;
+  if (!cv || !sc || !onda) return;
+  const x0 = sc.scrollLeft, dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.min(sc.clientWidth, S._dur * S.pps - x0)), h = cv.parentElement.clientHeight;
+  cv.style.left = x0 + "px"; cv.style.width = w + "px";
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   const g = cv.getContext("2d");
   g.scale(dpr, dpr);
   g.fillStyle = "#9ec947";
   const n = onda.picos.length, pps = onda.pps;
   for (let x = 0; x < w; x++) {
-    const i0 = Math.floor(x / S.pps * pps), i1 = Math.max(i0 + 1, Math.floor((x + 1) / S.pps * pps));
+    const i0 = Math.floor((x0 + x) / S.pps * pps), i1 = Math.max(i0 + 1, Math.floor((x0 + x + 1) / S.pps * pps));
     let m = 0;
     for (let i = i0; i < i1 && i < n; i++) m = Math.max(m, onda.picos[i]);
     const a = Math.max(1, m / 100 * (h - 6));

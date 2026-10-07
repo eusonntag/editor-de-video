@@ -133,7 +133,7 @@ input[type=range]{accent-color:var(--neon);}
 .vwrap{position:relative;}
 .sobre{position:absolute;left:0;right:0;top:0;bottom:48px;pointer-events:none;overflow:hidden;}
 .sobre.desenhando{pointer-events:auto;cursor:crosshair;outline:1px dashed var(--neon);outline-offset:-3px;background:rgba(196,255,94,.03);}
-.desf-ao-vivo{position:absolute;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(255,255,255,.04);outline:1px dashed rgba(255,255,255,.55);}
+.desf-ao-vivo{position:absolute;background:rgba(255,255,255,.03);outline:1px dashed rgba(255,255,255,.55);}
 .desf-ao-vivo.sel{outline:2px solid var(--neon);}
 .ret-desenho{position:absolute;border:2px solid var(--neon);background:rgba(196,255,94,.14);}
 .player-bar{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:var(--s-3);border-top:1px solid var(--line-1);flex-wrap:wrap;}
@@ -152,7 +152,7 @@ input[type=range]{accent-color:var(--neon);}
 .tl-track{height:34px;position:relative;border-bottom:1px solid var(--line-1);}
 .tl-track.regua{height:24px;}
 .tl-track.onda{height:44px;}
-.tl-track canvas{position:absolute;inset:0;width:100%;height:100%;}
+.tl-track canvas{position:absolute;top:0;left:0;height:100%;}
 .tick{position:absolute;top:0;height:100%;border-left:1px solid var(--line-2);font-family:var(--font-mono);font-size:9px;color:var(--text-faint);padding:4px 0 0 4px;white-space:nowrap;}
 .bloco{position:absolute;top:5px;bottom:5px;border-radius:var(--r-sm);font-size:10px;line-height:22px;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#000;transition:filter 120ms;}
 .bloco:hover{filter:brightness(1.15);z-index:2;}

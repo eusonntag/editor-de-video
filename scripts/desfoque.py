@@ -65,8 +65,9 @@ class Desfoque:
             if x1 - x0 < 2 or y1 - y0 < 2:
                 continue
             roi = saida[y0:y1, x0:x1]
-            # sigma proporcional ao lado menor: texto de qualquer tamanho fica ilegível
-            sigma = max(8.0, 0.3 * min(x1 - x0, y1 - y0)) * max(0.3, r["forca"])
+            # sigma proporcional ao lado menor: só o suficiente para o texto ficar ilegível
+            # (mesma fórmula da prévia do painel, em painel/app.js → atualizarDesfoques)
+            sigma = max(4.0, 0.12 * min(x1 - x0, y1 - y0)) * max(0.3, r["forca"])
             # desfoque forte numa versão reduzida da área (muito mais rápido, resultado igual a olho nu)
             f = max(1.0, sigma / 4.0)
             pw, ph = max(2, int(round((x1 - x0) / f))), max(2, int(round((y1 - y0) / f)))

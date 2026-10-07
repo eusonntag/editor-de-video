@@ -110,7 +110,7 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 
 - Regiões em `desfoque.json`, na linha do tempo do `cortado.mp4`; área em frações do quadro (vale em qualquer formato e resolução).
 - O `layout.py` borra a área no quadro de origem ANTES do zoom e do recorte (inclui o rascunho e o react). Sem zoom e com desfoque, o horizontal usa o render quadro a quadro (cerca de 0,8× D) em vez da recodificação rápida.
-- Desfoque Gaussiano proporcional ao tamanho da área (texto de qualquer tamanho fica ilegível); conferir sempre um quadro dentro do trecho.
+- Desfoque Gaussiano dosado pelo tamanho da área (sigma = 12% do lado menor, mínimo 4 px): tampa o texto sem borrar demais. O painel mostra a mesma força; conferir sempre um quadro dentro do trecho.
 - No vertical, uma área fora do recorte não aparece (nada a fazer).
 
 ## Layout
