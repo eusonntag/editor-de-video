@@ -149,6 +149,15 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 - Motion com `centralizado`: cards grandes no centro (horizontal 60% da largura; vertical quase a largura toda), um por vez, centralizados na altura livre acima da legenda. A galeria de estilos usa o fundo de cada estilo.
 - `finalizar` também exporta `videos/Editados/<nome>_narracao.mp3` (só voz de IA).
 
+### Narração num vídeo existente (`narrar sobre`)
+
+- Modos: `inteiro` (uma narração a partir de `--inicio`, vídeo sem fala; pode usar o bruto sem corte), `trechos` (`--trechos-arquivo [{"em", "texto", "pausar"}]`, `em` na linha do tempo do `cortado.mp4`), `trocar` (mesmo texto da transcrição; voz de IA frase a frase, cada frase esticada ou encolhida com `atempo` entre 0,8× e 1,3× para caber no tempo original; som original mudo).
+- `--audio-original mudo|baixo|manter`: no `inteiro` vale para o vídeo todo; no `trechos` só enquanto a narração fala (rampas de 0,2 s). Palavras originais abafadas saem do `palavras.json` (a legenda mostra a narração).
+- `pausar`: a imagem congela (foto do quadro naquele ponto) pela duração da fala + 0,3 s. Narração que passa do fim do vídeo: a última imagem fica parada. Tudo depois da pausa anda junto: palavras, `dinamica.json`, `desfoque.json`, `motion/roteiro.json` (início, fim e `em` dos cards).
+- Na 1ª vez guarda `cortado_sem_narracao.mp4` e `<nome>_sem_narracao.json` (palavras, dinamica, desfoque, motion/roteiro); cada `sobre` novo parte deles (não acumula). `narrar remover <id>` volta tudo. Saídas: `narracao.wav` (só a voz, na linha do tempo nova), `narracao_extra.json`, `estado.narracao_extra`. Desmarca layout, motion, legenda e final.
+- `--so-custo`: só calcula caracteres e créditos e grava `narracao_texto.txt` (para as amostras).
+- Refazer o corte (`cortar`) apaga a narração sobre o vídeo (o corte parte do bruto).
+
 ## Legendas
 
 - Estilos: `dinamica` (padrão, 1–3 palavras, maiúsculas, palavra falada em cor), `classica` (aulas/YouTube), `caixa` (tarja), `palavra` (uma por vez).

@@ -49,6 +49,8 @@ Narração (vídeo só de animações, sem câmera)
   narrar custo --texto-arquivo f        caracteres, minutos e créditos
   narrar gerar <id> --texto-arquivo f --voz V [--formato vertical|horizontal] [--velocidade 1.0]
   narrar audio <id> --audio arquivo     áudio gravado pelo aluno (depois transcrever e cortar)
+  narrar sobre <id> --modo inteiro|trechos|trocar --voz V …   narração num vídeo existente
+  narrar remover <id>                   desfaz a narração sobre o vídeo
 Chaves (.env)
   chave gravar groq|elevenlabs <valor>  testa e só grava se funcionar (mostra mascarada)
   chave testar groq|elevenlabs
@@ -356,6 +358,12 @@ def cmd_cortar(a) -> None:
         print(f"✅ rascunho do corte (com os zooms): {destino}")
         return
     destino = t / "cortado.mp4"
+    if (t / "narracao_extra.json").exists():
+        # corte novo parte do bruto: a narração sobre o vídeo antigo deixa de valer (refazer depois)
+        for arq in ("narracao_extra.json", "narracao.wav", "cortado_sem_narracao.mp4", "palavras_sem_narracao.json",
+                    "dinamica_sem_narracao.json", "desfoque_sem_narracao.json", "motion/roteiro_sem_narracao.json"):
+            (t / arq).unlink(missing_ok=True)
+        print("aviso: a narração por IA deste vídeo foi removida pelo corte novo; refaça a narração")
     C.rodar_script(script, str(edl), "-o", str(destino), "--no-subtitles", quieto=True)
     rodar_script("palavras_timeline.py", str(edl))
     gerar_onda(destino, t / "onda_cortado.json")
@@ -892,7 +900,7 @@ def cmd_finalizar(a) -> None:
         finais[f] = str(destino)
         C.marcar_etapa(vid, "final", f, arquivo=str(destino))
     narr, mp3 = C.narrado(vid), None
-    if narr and narr.get("tipo") == "ia" and (t / "narracao.wav").exists():
+    if (t / "narracao.wav").exists() and ((narr and narr.get("tipo") == "ia") or (t / "narracao_extra.json").exists()):
         mp3 = C.EDITADOS / f"{nome}_narracao.mp3"
         C.rodar(["ffmpeg", "-y", "-i", str(t / "narracao.wav"), "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)])
     e = C.ler_estado(vid)
@@ -1099,7 +1107,7 @@ def main() -> None:
     p.add_argument("--sem-abrir", action="store_true"); p.add_argument("--porta", type=int, default=8765)
     p = sub.add_parser("liberar-espaco"); p.add_argument("--confirmar", action="store_true")
     sub.add_parser("exemplo")
-    p = sub.add_parser("narrar"); p.add_argument("acao", choices=["vozes", "biblioteca", "adicionar", "amostras", "custo", "gerar", "audio"])
+    p = sub.add_parser("narrar"); p.add_argument("acao", choices=["vozes", "biblioteca", "adicionar", "amostras", "custo", "gerar", "audio", "sobre", "remover"])
     p = sub.add_parser("chave"); p.add_argument("acao", choices=["gravar", "testar", "motor"])
     p.add_argument("servico", nargs="?", choices=["groq", "elevenlabs", "whisper", "scribe"]); p.add_argument("valor", nargs="?")
 

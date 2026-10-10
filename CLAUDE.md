@@ -38,7 +38,7 @@ coloco zoom, animações e legenda, e ainda faço a versão para Reels.
 
 Para começar:
 - /video-editar: editar um vídeo do começo ao fim (recomendado)
-- /video-narrar: criar um vídeo só de animações, com voz de IA (sem gravar)
+- /video-narrar: voz de IA, num vídeo novo só de animações ou no seu vídeo
 
 Etapas avulsas:
 - /video-cortar: só cortar pausas e erros

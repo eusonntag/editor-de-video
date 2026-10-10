@@ -23,7 +23,7 @@ Como funciona:
 ```
 Editar
 - /video-editar: do começo ao fim (recomendado)
-- /video-narrar: vídeo só de animações, com voz de IA ou o seu áudio (sem gravar a câmera)
+- /video-narrar: voz de IA, num vídeo novo só de animações ou no seu vídeo (narrar, trechos ou trocar a voz)
 - /video-cortar: só cortar pausas e erros
 - /video-legendar: colocar ou trocar a legenda
 - /video-motion: colocar ou refazer as animações

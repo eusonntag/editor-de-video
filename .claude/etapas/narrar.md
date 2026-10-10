@@ -1,8 +1,25 @@
-# Etapa: vídeo narrado (só animações, sem câmera)
+# Etapa: narração (vídeo novo só de animações ou narração num vídeo existente)
 
-Usada pelo `/video-narrar` e pela opção "vídeo só de animações" do `/video-motion`. O vídeo não tem câmera: um fundo nas cores do estilo, a narração e os cards de motion ocupando a tela, com legenda. Referência técnica: `docs/pipeline.md` → "Narração".
+Usada pelo `/video-narrar` e pela opção "vídeo só de animações" do `/video-motion`. Referência técnica: `docs/pipeline.md` → "Narração".
 
 Siga o CLAUDE.md (uma pergunta por vez, 🔍/⏳/✅, caminho absoluto, prévias na conversa).
+
+## 0. O que narrar
+
+Pule se o aluno já disse (ex.: veio do `/video-motion` opção 2 → opção 1 abaixo).
+
+```
+O que você quer fazer?
+
+1. Criar um vídeo novo só de animações, sem gravar (voz de IA ou o seu áudio)
+2. Narrar um vídeo meu que não tem fala (gravação de tela, produto, imagens)
+3. Colocar narração em alguns trechos de um vídeo meu
+4. Trocar a minha voz pela voz de IA no vídeo inteiro
+
+Digite o número:
+```
+
+1 → passos 1 a 9 abaixo. 2, 3 e 4 → passo 10 (narração num vídeo existente).
 
 ## 1. De onde vem a voz
 
@@ -160,4 +177,47 @@ Digite o número:
 5. Daí em diante é o corte normal, sempre no estilo natural (sem zoom, não há rosto): `.claude/etapas/video-editar/transcrever.md` e `.claude/etapas/video-editar/cortar.md` com `cortes-base <id> --estilo natural`. O rascunho é o fundo com a sua voz: peça para ouvir.
 6. Depois do corte, siga do passo 7 desta etapa.
 
-Registre no `project.md`: tipo de voz, voz escolhida, velocidade, formato, estilo, custo em caracteres.
+## 10. Narração num vídeo existente (opções 2, 3 e 4)
+
+O editor guarda o corte original e grava a narração no `cortado.mp4`; layout, motion e legenda daquele vídeo precisam ser refeitos depois (o editor desmarca sozinho). Zooms, desfoques e cards andam junto quando a imagem pausa.
+
+1. **Vídeo**: `.claude/etapas/escolher-video.md`.
+   - Opção 2 (sem fala): pode ser o bruto, sem corte. Se já foi cortado, a narração vai sobre o corte.
+   - Opções 3 e 4: precisam de transcrição e corte. Faltando, ofereça fazer antes (`/video-cortar`) e volte.
+2. **Conexão com a ElevenLabs**: passo 2.
+3. **O que a voz vai falar**:
+   - Opção 2: peça o texto ou ofereça escrever. Para escrever, olhe 4 a 6 quadros do vídeo (extraia com o ffmpeg em instantes espalhados e abra com Read) e escreva um texto que acompanhe o que aparece. Tamanho: cerca de 14 caracteres por segundo de vídeo (se passar, a última imagem fica parada até a voz terminar; avise). Pergunte o volume do som original:
+     ```
+     E o som que já está no vídeo?
+
+     1. Tirar (só a narração)
+     2. Deixar bem baixinho por baixo da voz
+     3. Manter como está
+
+     Digite o número:
+     ```
+     → `--audio-original mudo|baixo|manter`. Grave o texto em `videos/.trabalho/_narracao/<id>.txt`.
+   - Opção 3: mostre o vídeo em frases com tempo (leia `videos/.trabalho/<id>/palavras.json`, agrupe em frases, `0:12 "texto"`). Pergunte onde entra cada narração e o que ela diz (você pode sugerir o texto). Para cada trecho, pergunte se o vídeo para:
+     ```
+     Enquanto a narração fala, o vídeo:
+
+     1. Para (a imagem congela e o vídeo continua depois): bom para introduções e explicações extras
+     2. Continua rodando, com a sua voz abaixada: bom para partes sem fala ou demonstrações
+
+     Digite o número:
+     ```
+     Grave `videos/.trabalho/_narracao/<id>-trechos.json`: `[{"em": 12.4, "texto": "…", "pausar": true}]` (`em` = segundos no vídeo cortado; prefira o fim de uma frase, nunca o meio de uma palavra). Com "continua rodando", use `--audio-original baixo` (ou `mudo`, se o aluno pedir).
+   - Opção 4: avise antes, em uma frase: `A voz nova fala o mesmo texto, frase por frase, no ritmo da sua; a boca não acompanha exatamente, então funciona melhor com a sua voz clonada e em vídeos com cortes e zooms.` O texto é a própria transcrição (corrija nomes errados antes com `edit/correcoes.json` + `{PY} editor.py palavras <id>`).
+4. **Custo**: `{PY} editor.py narrar sobre <id> --modo inteiro|trechos|trocar [--texto-arquivo f | --trechos-arquivo j] --so-custo` (não gasta nada; grava o texto final em `videos/.trabalho/<id>/narracao_texto.txt`).
+5. **Voz e ritmo**: passo 5, com as amostras feitas do `narracao_texto.txt`. Na opção 4, coloque a voz clonada do aluno em primeiro, se existir.
+6. **Resumo e confirmação**: como no passo 6 (texto, voz, ritmo, som original, custo, saldo).
+7. **Gerar**: `🔍 Próximo passo: gravar a narração e juntar com o vídeo ({N} passos). Tempo estimado: {tempo-estimado.md}.` → `{PY} editor.py narrar sobre <id> --modo <m> --voz <voice_id> --voz-nome "<nome>" --velocidade <v> [--texto-arquivo f | --trechos-arquivo j] [--inicio s] [--audio-original x]`.
+   Leia os `avisos` (voz nova bem mais longa ou curta, narração falando junto com o aluno) e mostre os que importam em linguagem simples.
+8. **Prévia**: mande `videos/.trabalho/<id>/cortado.mp4` com `SendUserFile` (legenda "Vídeo com a narração") e pergunte `1. Ficou bom, continuar / 2. Mudar o texto / 3. Trocar a voz ou o ritmo / 4. Desfazer a narração`. 2 e 3: ajuste e rode o `sobre` de novo (ele sempre parte do vídeo original, não acumula). 4: `{PY} editor.py narrar remover <id>`.
+9. **Refazer as etapas seguintes**, só as que o vídeo já tinha ou que o aluno pedir, para cada formato em `escolhas.formatos` (ou pergunte o formato, como no `/video-editar`):
+   - Formato: `{PY} editor.py layout <id> <f>` (vídeo com câmera usa o layout normal; os zooms já foram deslocados).
+   - Animações: se já existia `motion/roteiro.json`, os cards foram deslocados; vá para a prévia do `motion.md` (passo 3). Senão, ofereça criar (`motion.md` inteiro).
+   - Legenda (`legendar.md`) e entrega (`finalizar.md`). Com nome final já existente, substitui. O `finalizar` também salva `<nome>_narracao.mp3` (só a narração).
+10. Se depois o aluno refizer o corte (`/video-cortar`), a narração sai junto (o editor avisa): refaça este passo.
+
+Registre no `project.md`: tipo de voz, voz escolhida, velocidade, formato, estilo, custo em caracteres; nas opções 2 a 4, o modo, os trechos e o volume do som original.

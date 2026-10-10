@@ -12,6 +12,9 @@ ele segue o caminho normal: motion → legenda → finalizar.
   gerar <id> --texto-arquivo f --voz V [--formato horizontal|vertical] [--modelo X] [--velocidade 1.0] [--refazer]
   audio <id> --audio arquivo [--formato F]  usa um áudio gravado pelo aluno (depois: transcrever e cortar)
   layout <trabalho> <formato> [--estilo X] [--fundo imagem]   fundo + áudio do cortado.mp4 → base.mp4
+  sobre <id> --modo inteiro|trechos|trocar --voz V [--texto-arquivo f | --trechos-arquivo j] [--inicio s]
+        [--audio-original mudo|baixo|manter] [--velocidade v] [--so-custo]   narração num vídeo existente
+  remover <id>                            desfaz a narração sobre o vídeo
 
 Chave: ELEVENLABS_API_KEY no .env, com as permissões "Text to Speech" e "Voices" (leitura).
 Modelo: NARRACAO_MODELO no .env (padrão eleven_multilingual_v2; eleven_flash_v2_5 custa metade).
@@ -174,10 +177,10 @@ def palavras_do_alinhamento(al: dict, deslocamento: float) -> list[dict]:
 
 # -------------------------------------------------------------------- áudio ----
 
-def decodificar(mp3: bytes):
+def decodificar(mp3: bytes, sr: int = SR):
     import numpy as np
 
-    r = subprocess.run(["ffmpeg", "-v", "error", "-i", "pipe:0", "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"],
+    r = subprocess.run(["ffmpeg", "-v", "error", "-i", "pipe:0", "-ac", "1", "-ar", str(sr), "-f", "f32le", "-"],
                        input=mp3, capture_output=True)
     if r.returncode:
         raise ErroNarracao("✗ não consegui ler o áudio recebido da ElevenLabs")
@@ -473,6 +476,396 @@ def cmd_audio(a) -> None:
     print(json.dumps({"id": t.name, "duracao": round(dur, 2)}, ensure_ascii=False))
 
 
+# ------------------------------------------- narração sobre um vídeo existente ----
+# Os três modos mexem no cortado.mp4 (ou no bruto, se o vídeo não tem corte) e guardam o original em
+# cortado_sem_narracao.mp4 / palavras_sem_narracao.json (+ dinamica/desfoque), para refazer ou remover.
+#   inteiro: uma narração começando em --inicio (vídeo sem fala: tela, produto, imagens)
+#   trechos: falas em pontos escolhidos (--trechos-arquivo [{"em": s, "texto": "...", "pausar": false}])
+#            pausar = congela a imagem enquanto a narração fala (empurra o resto do vídeo)
+#   trocar:  a voz de IA fala o mesmo texto do vídeo, frase a frase, no ritmo da fala original
+
+SR_V = 48000
+GANHO_ORIGINAL = {"mudo": 0.0, "baixo": 0.15, "manter": 1.0}
+EXTRAS = ("palavras", "dinamica", "desfoque", "motion/roteiro")  # guardados como <nome>_sem_narracao.json
+
+
+def ler_audio(video: Path, dur: float, sr: int = SR_V):
+    import numpy as np
+
+    r = subprocess.run(["ffmpeg", "-v", "error", "-i", str(video), "-vn", "-ac", "1", "-ar", str(sr), "-f", "f32le", "-"],
+                       capture_output=True)
+    x = np.frombuffer(r.stdout, dtype=np.float32).copy() if r.returncode == 0 else np.zeros(0, np.float32)
+    n = int(round(dur * sr))
+    return np.pad(x, (0, max(0, n - len(x))))[:n]
+
+
+def esticar(x, fator: float, sr: int = SR_V):
+    """Muda a duração sem mudar o tom (atempo). fator > 1 acelera."""
+    import numpy as np
+
+    if abs(fator - 1) < 0.01 or not len(x):
+        return x
+    r = subprocess.run(["ffmpeg", "-v", "error", "-f", "f32le", "-ar", str(sr), "-ac", "1", "-i", "pipe:0",
+                        "-filter:a", f"atempo={fator:.4f}", "-f", "f32le", "-"],
+                       input=x.astype(np.float32).tobytes(), capture_output=True)
+    return np.frombuffer(r.stdout, dtype=np.float32).copy() if r.returncode == 0 else x
+
+
+def base_sobre(t: Path, vid: str) -> tuple[Path, list[dict], bool]:
+    """(vídeo base, palavras base, base é o bruto). Na 1ª narração guarda o corte original."""
+    extra = C.ler_json(t / "narracao_extra.json", {}) or {}
+    if extra.get("base_bruto"):
+        return C.achar_bruto(vid), [], True
+    orig = t / "cortado_sem_narracao.mp4"
+    if not orig.exists():
+        if not (t / "cortado.mp4").exists():
+            return C.achar_bruto(vid), [], True
+        shutil.copy2(t / "cortado.mp4", orig)
+        for nome in EXTRAS:
+            if (t / f"{nome}.json").exists():
+                shutil.copy2(t / f"{nome}.json", t / f"{nome}_sem_narracao.json")
+    return orig, C.ler_json(t / "palavras_sem_narracao.json", []) or [], False
+
+
+def _norm(p: str) -> str:
+    import unicodedata
+
+    p = unicodedata.normalize("NFD", p.lower())
+    return "".join(ch for ch in p if ch.isalnum())
+
+
+def frases_de(palavras: list[dict], pausa: float = 0.45, max_palavras: int = 28) -> list[list[int]]:
+    out: list[list[int]] = []
+    for i, w in enumerate(palavras):
+        if out:
+            ant = palavras[out[-1][-1]]
+            if (w["start"] - ant["end"] <= pausa and not ant["text"].endswith((".", "!", "?"))
+                    and len(out[-1]) < max_palavras):
+                out[-1].append(i)
+                continue
+        out.append([i])
+    return out
+
+
+def falas_trocar(pal: list[dict], voz: str, modelo: str, velocidade: float, avisos: list[str]) -> list[dict]:
+    """Fala o mesmo texto com a voz de IA; cada frase é esticada/encolhida para caber no tempo da original."""
+    import difflib
+
+    pal = [w for w in pal if re.search(r"\w", w["text"])]
+    if not pal:
+        raise ErroNarracao("✗ este vídeo não tem fala transcrita para trocar a voz")
+    frases = frases_de(pal)
+    blocos: list[list[list[int]]] = [[]]
+    for f in frases:
+        tam = sum(len(pal[i]["text"]) + 1 for fr in blocos[-1] for i in fr)
+        if blocos[-1] and tam + sum(len(pal[i]["text"]) + 1 for i in f) > TAMANHO_PEDACO:
+            blocos.append([])
+        blocos[-1].append(f)
+    textos = [" ".join(pal[i]["text"] for fr in b for i in fr) for b in blocos]
+    falas, cursor = [], 0.0
+    for n, (bloco, texto) in enumerate(zip(blocos, textos)):
+        print(f"⏳ Passo {n + 1}/{len(blocos) + 1}: gravar a voz nova (parte {n + 1} de {len(blocos)}).", flush=True)
+        mp3, al = falar(texto, voz, modelo, velocidade, antes=textos[n - 1] if n else "",
+                        depois=textos[n + 1] if n + 1 < len(textos) else "")
+        audio = decodificar(mp3, SR_V)
+        ws = palavras_do_alinhamento(al, 0.0)
+        idx = [i for fr in bloco for i in fr]
+        # palavra original ↔ palavra falada pela IA (normalmente 1 para 1)
+        par: dict[int, int] = {}
+        if len(ws) == len(idx):
+            par = {i: k for k, i in enumerate(idx)}
+        else:
+            sm = difflib.SequenceMatcher(a=[_norm(pal[i]["text"]) for i in idx], b=[_norm(w["text"]) for w in ws],
+                                         autojunk=False)
+            for m in sm.get_matching_blocks():
+                for d in range(m.size):
+                    par[idx[m.a + d]] = m.b + d
+            avisos.append(f"parte {n + 1}: a voz leu {len(ws)} palavras para {len(idx)} do texto; o sincronismo pode variar")
+        for fr in bloco:
+            casadas = [i for i in fr if i in par]
+            if not casadas:
+                continue
+            ts, te = ws[par[casadas[0]]]["start"], ws[par[casadas[-1]]]["end"]
+            os_, oe = pal[fr[0]]["start"], pal[fr[-1]]["end"]
+            a0, a1 = max(0.0, ts - 0.04), te + 0.10
+            trecho = audio[int(a0 * SR_V): int(a1 * SR_V)]
+            fator = min(1.3, max(0.8, (te - ts) / max(oe - os_, 0.2)))
+            if fator in (0.8, 1.3):
+                avisos.append(f"frase em {os_:.1f}s: a voz nova ficou {'mais longa' if fator == 1.3 else 'mais curta'} que a original")
+            esticado = esticar(trecho, fator)
+            pos = max(os_ - 0.04, cursor)
+            cursor = pos + len(esticado) / SR_V
+            falas.append({"pos": pos, "pausar": False, "audio": esticado,
+                          "palavras": [{"text": pal[i]["text"], "start": (ws[par[i]]["start"] - a0) / fator,
+                                        "end": (ws[par[i]]["end"] - a0) / fator} for i in casadas]})
+    return falas
+
+
+def falas_trechos(trechos: list[dict], voz: str, modelo: str, velocidade: float) -> list[dict]:
+    falas = []
+    textos = [tr["texto"].strip() for tr in trechos]
+    for n, (tr, texto) in enumerate(zip(trechos, textos)):
+        print(f"⏳ Passo {n + 1}/{len(trechos) + 1}: gravar a narração (trecho {n + 1} de {len(trechos)}).", flush=True)
+        audio, palavras = [], []
+        pos = 0.0
+        partes = pedacos(texto)
+        for k, p in enumerate(partes):
+            mp3, al = falar(p, voz, modelo, velocidade, antes=partes[k - 1] if k else (textos[n - 1] if n else ""),
+                            depois=partes[k + 1] if k + 1 < len(partes) else "")
+            x = decodificar(mp3, SR_V)
+            palavras += palavras_do_alinhamento(al, pos)
+            audio.append(x)
+            pos += len(x) / SR_V
+        import numpy as np
+
+        falas.append({"pos": float(tr["em"]), "pausar": bool(tr.get("pausar")), "audio": np.concatenate(audio),
+                      "palavras": palavras, "texto": texto})
+    return falas
+
+
+def _deslocar(eventos: list[dict], mapear) -> list[dict]:
+    out = []
+    for ev in eventos:
+        ev = dict(ev)
+        for k in ("inicio", "fim"):
+            if k in ev:
+                ev[k] = round(mapear(ev[k]), 3)
+        out.append(ev)
+    return out
+
+
+def montar_sobre(t: Path, base: Path, pal_base: list[dict], falas: list[dict], ganho: float,
+                 voz_inteira_trocada: bool, avisos: list[str], ganho_no_video_todo: bool = False) -> dict:
+    import numpy as np
+    import soundfile as sf
+
+    info = C.info_video(base)
+    dur = info["duracao"]
+    falas.sort(key=lambda f: f["pos"])
+    for f in falas:
+        f["pos"] = min(max(0.0, f["pos"]), dur - 0.05 if f["pausar"] else dur)
+        f["dur"] = len(f["audio"]) / SR_V
+
+    # pausas: a imagem congela no ponto `pos` enquanto a narração fala
+    pausas: list[tuple[float, float]] = []
+    acumulado = 0.0
+    for f in falas:
+        if f["pausar"]:
+            d = round(f["dur"] + 0.3, 3)
+            f["novo"] = f["pos"] + acumulado + 0.15
+            pausas.append((f["pos"], d))
+            acumulado += d
+
+    def mapear(x: float) -> float:
+        return x + sum(d for p, d in pausas if p <= x + 1e-6)
+
+    for f in falas:
+        if not f["pausar"]:
+            f["novo"] = mapear(f["pos"])
+    novo_total = dur + acumulado
+    fim_falas = max((f["novo"] + f["dur"] for f in falas), default=0.0)
+    extensao = round(max(0.0, fim_falas + 0.6 - novo_total), 3)
+    novo_total += extensao
+
+    # áudio original com as pausas (silêncio) e o volume baixado onde a narração fala
+    orig = ler_audio(base, dur)
+    pedacos_a, ultimo = [], 0
+    for p, d in pausas:
+        corte = int(round(p * SR_V))
+        pedacos_a += [orig[ultimo:corte], np.zeros(int(round(d * SR_V)), np.float32)]
+        ultimo = corte
+    pedacos_a += [orig[ultimo:], np.zeros(int(round(extensao * SR_V)), np.float32)]
+    fundo = np.concatenate(pedacos_a)
+    n_total = int(round(novo_total * SR_V))
+    fundo = np.pad(fundo, (0, max(0, n_total - len(fundo))))[:n_total]
+    env = np.ones(n_total, np.float32) * (0.0 if voz_inteira_trocada else ganho if ganho_no_video_todo else 1.0)
+    if not voz_inteira_trocada and not ganho_no_video_todo and ganho < 1.0:
+        rampa = int(0.2 * SR_V)
+        for f in falas:
+            a, b = int((f["novo"] - 0.1) * SR_V), int((f["novo"] + f["dur"] + 0.1) * SR_V)
+            a, b = max(0, a), min(n_total, b)
+            env[a:b] = np.minimum(env[a:b], ganho)
+            for k in range(1, rampa):  # transição suave na entrada e na saída
+                g = ganho + (1 - ganho) * k / rampa
+                if a - k >= 0:
+                    env[a - k] = min(env[a - k], g)
+                if b - 1 + k < n_total:
+                    env[b - 1 + k] = min(env[b - 1 + k], g)
+    narr = np.zeros(n_total, np.float32)
+    for f in falas:
+        a = int(round(f["novo"] * SR_V))
+        x = f["audio"][: max(0, n_total - a)]
+        narr[a:a + len(x)] += x
+    mix = fundo * env + narr
+    pico = float(np.abs(mix).max() or 1.0)
+    if pico > 0.98:
+        mix *= 0.98 / pico
+
+    # palavras: as originais que continuam audíveis + as da narração
+    faixas = [(f["novo"] - 0.05, f["novo"] + f["dur"]) for f in falas]
+    palavras = []
+    if not voz_inteira_trocada and not (ganho_no_video_todo and ganho < 1.0):
+        for w in pal_base:
+            s, e = mapear(w["start"]), mapear(w["end"])
+            dentro = any(s < b and a < e for a, b in faixas)
+            if dentro and ganho >= 1.0:
+                avisos.append(f"a narração em {s:.1f}s fala junto com a sua voz (áudio original mantido)")
+            if dentro and ganho < 1.0:
+                continue
+            palavras.append({"text": w["text"], "start": round(s, 3), "end": round(e, 3)})
+    for f in falas:
+        palavras += [{"text": w["text"], "start": round(f["novo"] + w["start"], 3), "end": round(f["novo"] + w["end"], 3)}
+                     for w in f["palavras"]]
+    palavras.sort(key=lambda w: w["start"])
+    avisos[:] = list(dict.fromkeys(avisos))[:12]
+
+    # vídeo: trechos do original + imagem congelada nas pausas e no fim (se a narração passar do vídeo)
+    with tempfile.TemporaryDirectory() as tmp:
+        wav = Path(tmp) / "mix.wav"
+        sf.write(wav, mix, SR_V, subtype="PCM_16")
+        sf.write(t / "narracao.wav", narr, SR_V, subtype="PCM_16")
+        destino = t / "cortado.mp4"
+        saida = t / "cortado.tmp.mp4"
+        cortes = sorted({p for p, _ in pausas})
+        if not cortes and not extensao and base.name == "cortado_sem_narracao.mp4":
+            C.rodar(["ffmpeg", "-y", "-i", str(base), "-i", str(wav), "-map", "0:v", "-map", "1:a", "-c:v", "copy",
+                     "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(saida)])
+        else:
+            # imagem parada = foto do quadro naquele ponto, repetida pelo tempo da narração
+            W, H, fps = info["largura"], info["altura"], info["fps_int"]
+            paradas = [(p, sum(d for q, d in pausas if q == p)) for p in cortes]
+            if extensao:
+                paradas.append((dur, extensao))
+            entradas, filtros, rotulos = [], [], []
+            limites = [0.0] + cortes + [dur]
+            norm = f"scale={W}:{H},setsar=1,fps={fps},format=yuv420p"
+            for k in range(len(limites) - 1):
+                a, b = limites[k], limites[k + 1]
+                if b - a >= 0.04:
+                    filtros.append(f"[0:v]trim=start={a:.3f}:end={b:.3f},setpts=PTS-STARTPTS,{norm}[s{k}]")
+                    rotulos.append(f"[s{k}]")
+                parada = next((d for q, d in paradas if abs(q - b) < 1e-6), 0)
+                if parada:
+                    foto = Path(tmp) / f"quadro{k}.png"
+                    C.rodar(["ffmpeg", "-y", "-ss", f"{max(0.0, min(b, dur - 0.1)):.3f}", "-i", str(base),
+                             "-frames:v", "1", str(foto)])
+                    entradas += ["-loop", "1", "-framerate", str(fps), "-t", f"{parada:.3f}", "-i", str(foto)]
+                    n = 2 + len(entradas) // 8 - 1
+                    filtros.append(f"[{n}:v]{norm}[p{k}]")
+                    rotulos.append(f"[p{k}]")
+            filtros.append(f"{''.join(rotulos)}concat=n={len(rotulos)}:v=1:a=0[v]")
+            C.rodar(["ffmpeg", "-y", "-i", str(base), "-i", str(wav), *entradas, "-filter_complex", ";".join(filtros),
+                     "-map", "[v]", "-map", "1:a", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+                     "-g", str(fps), "-c:a", "aac", "-b:a", "192k", "-t", f"{novo_total:.3f}",
+                     "-movflags", "+faststart", str(saida)])
+        saida.replace(destino)
+
+    C.gravar_json(t / "palavras.json", palavras)
+    for nome in ("dinamica", "desfoque"):
+        orig_j = C.ler_json(t / f"{nome}_sem_narracao.json")
+        if orig_j:
+            chave = "eventos" if nome == "dinamica" else "regioes"
+            orig_j[chave] = _deslocar(orig_j.get(chave, []), mapear)
+            if nome == "dinamica" and "duracao" in orig_j:
+                orig_j["duracao"] = round(novo_total, 3)
+            C.gravar_json(t / f"{nome}.json", orig_j)
+    roteiro = C.ler_json(t / "motion" / "roteiro_sem_narracao.json")
+    if roteiro:
+        # cards (e os momentos já sincronizados com a fala) acompanham as pausas
+        for card in roteiro.get("cards", []):
+            card["inicio"], card["fim"] = round(mapear(card["inicio"]), 3), round(mapear(card["fim"]), 3)
+            c = card.get("campos") or {}
+            alvos = [c] + [it for lista in ("itens", "passos") for it in (c.get(lista) or []) if isinstance(it, dict)]
+            for obj in alvos:
+                if obj.get("em") is not None:
+                    obj["em"] = round(mapear(obj["em"]), 3)
+        C.gravar_json(t / "motion" / "roteiro.json", roteiro)
+    return {"duracao_antes": round(dur, 2), "duracao": round(novo_total, 2), "pausas": len(pausas),
+            "imagem_parada_no_fim": extensao, "palavras": len(palavras)}
+
+
+def cmd_sobre(a) -> None:
+    vid = C.id_video(a.id)
+    t = C.pasta(vid)
+    if C.narrado(vid):
+        raise ErroNarracao("✗ este vídeo já é narrado (sem câmera): use gerar --refazer")
+    modelo = a.modelo or modelo_padrao()
+    base, pal_base, base_bruto = base_sobre(t, vid)
+    if a.modo == "trocar":
+        if base_bruto or not pal_base:
+            raise ErroNarracao("✗ para trocar a voz, o vídeo precisa estar transcrito e cortado")
+        texto = " ".join(w["text"] for w in pal_base if re.search(r"\w", w["text"]))
+        trechos = []
+    elif a.modo == "inteiro":
+        texto = ler_texto(Path(a.texto_arquivo))
+        trechos = [{"em": a.inicio, "texto": texto, "pausar": False}]
+    else:
+        trechos = json.loads(Path(a.trechos_arquivo).read_text(encoding="utf-8"))
+        if not trechos or not all(tr.get("texto", "").strip() for tr in trechos):
+            raise ErroNarracao("✗ cada trecho precisa de \"em\" (segundos) e \"texto\"")
+        texto = "\n\n".join(tr["texto"].strip() for tr in trechos)
+    (t / "narracao_texto.txt").write_text(texto + "\n", encoding="utf-8")
+    if a.so_custo:
+        out = {**estimar(texto, modelo), "texto_arquivo": str(t / "narracao_texto.txt"),
+               "duracao_video": round(C.info_video(base)["duracao"], 2)}
+        s = saldo()
+        if s:
+            out["saldo"] = s
+        print(json.dumps(out, indent=1, ensure_ascii=False))
+        return
+
+    avisos: list[str] = []
+    if a.modo == "trocar":
+        falas = falas_trocar(pal_base, a.voz, modelo, a.velocidade, avisos)
+    else:
+        falas = falas_trechos(trechos, a.voz, modelo, a.velocidade)
+    print("⏳ Passo final: juntar a narração com o vídeo.", flush=True)
+    ganho = 0.0 if a.modo == "trocar" else GANHO_ORIGINAL[a.audio_original]
+    resumo = montar_sobre(t, base, pal_base, falas, ganho, a.modo == "trocar", avisos,
+                          ganho_no_video_todo=a.modo == "inteiro")
+
+    C.gravar_json(t / "narracao_extra.json", {
+        "modo": a.modo, "voz": a.voz, "voz_nome": a.voz_nome, "modelo": modelo, "velocidade": a.velocidade,
+        "audio_original": "mudo" if a.modo == "trocar" else a.audio_original, "base_bruto": base_bruto,
+        "trechos": [{"em": tr["em"], "texto": tr["texto"], "pausar": bool(tr.get("pausar"))} for tr in trechos],
+        **estimar(texto, modelo), **resumo})
+    C.gerar_onda(t / "cortado.mp4", t / "onda_cortado.json")
+    C.desmarcar_a_partir(vid, "layout")
+    if base_bruto:
+        C.marcar_etapa(vid, "transcricao", motor="sem fala (narração por IA)")
+    C.marcar_etapa(vid, "corte", narracao=a.modo)
+    e = C.ler_estado(vid)
+    e["narracao_extra"] = a.modo
+    C.salvar_estado(vid, e)
+    print(json.dumps({"id": vid, "modo": a.modo, **resumo, "avisos": avisos}, indent=1, ensure_ascii=False))
+
+
+def cmd_remover(a) -> None:
+    """Desfaz a narração sobre o vídeo: volta o corte (ou o bruto) como era."""
+    vid = C.id_video(a.id)
+    t = C.pasta(vid)
+    extra = C.ler_json(t / "narracao_extra.json")
+    if not extra:
+        raise ErroNarracao("✗ este vídeo não tem narração para remover")
+    if extra.get("base_bruto"):
+        for arq in ("cortado.mp4", "palavras.json", "onda_cortado.json"):
+            (t / arq).unlink(missing_ok=True)
+        C.desmarcar_a_partir(vid, "transcricao")
+    else:
+        (t / "cortado_sem_narracao.mp4").replace(t / "cortado.mp4")
+        for nome in EXTRAS:
+            if (t / f"{nome}_sem_narracao.json").exists():
+                (t / f"{nome}_sem_narracao.json").replace(t / f"{nome}.json")
+        C.gerar_onda(t / "cortado.mp4", t / "onda_cortado.json")
+        C.desmarcar_a_partir(vid, "layout")
+    for arq in ("narracao_extra.json", "narracao.wav", "narracao_texto.txt"):
+        (t / arq).unlink(missing_ok=True)
+    e = C.ler_estado(vid)
+    e.pop("narracao_extra", None)
+    C.salvar_estado(vid, e)
+    print(json.dumps({"id": vid, "removida": extra.get("modo")}, ensure_ascii=False))
+
+
 def cmd_layout(a) -> None:
     """Fundo do formato + áudio do cortado.mp4 (narração já cortada, se foi o caso)."""
     t = Path(a.trabalho).resolve()
@@ -520,13 +913,27 @@ def main() -> None:
     p = sub.add_parser("audio"); p.add_argument("id"); p.add_argument("--audio", required=True)
     p.add_argument("--refazer", action="store_true")
     p.add_argument("--formato", choices=["horizontal", "vertical"], default="vertical")
+    p = sub.add_parser("sobre"); p.add_argument("id"); p.add_argument("--modo", choices=["inteiro", "trechos", "trocar"], required=True)
+    p.add_argument("--voz"); p.add_argument("--voz-nome"); p.add_argument("--modelo")
+    p.add_argument("--velocidade", type=float, default=1.0)
+    p.add_argument("--texto-arquivo"); p.add_argument("--trechos-arquivo"); p.add_argument("--inicio", type=float, default=0.3)
+    p.add_argument("--audio-original", choices=["mudo", "baixo", "manter"], default="baixo")
+    p.add_argument("--so-custo", action="store_true", help="só mostra caracteres e créditos (não gasta nada)")
+    p = sub.add_parser("remover"); p.add_argument("id")
     p = sub.add_parser("layout"); p.add_argument("trabalho"); p.add_argument("formato", choices=["horizontal", "vertical"])
     p.add_argument("--estilo"); p.add_argument("--fundo")
     a = ap.parse_args()
+    if a.cmd == "sobre" and not a.so_custo and not a.voz:
+        ap.error("falta --voz")
+    if a.cmd == "sobre" and a.modo == "inteiro" and not a.texto_arquivo:
+        ap.error("o modo inteiro precisa de --texto-arquivo")
+    if a.cmd == "sobre" and a.modo == "trechos" and not a.trechos_arquivo:
+        ap.error("o modo trechos precisa de --trechos-arquivo")
     if getattr(a, "velocidade", None) is not None and not 0.7 <= a.velocidade <= 1.2:
         ap.error("--velocidade vai de 0.7 a 1.2")
     {"vozes": cmd_vozes, "biblioteca": cmd_biblioteca, "adicionar": cmd_adicionar, "amostras": cmd_amostras,
-     "custo": cmd_custo, "gerar": cmd_gerar, "audio": cmd_audio, "layout": cmd_layout}[a.cmd](a)
+     "custo": cmd_custo, "gerar": cmd_gerar, "audio": cmd_audio, "layout": cmd_layout,
+     "sobre": cmd_sobre, "remover": cmd_remover}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ Todos os comandos começam com `/` e são digitados no chat do Claude Code, com 
 | `/video-cortar` | Só o corte (pausas, erros, repetições), com estilo natural, dinâmico (zooms) ou acelerado. |
 | `/video-legendar` | Coloca ou troca a legenda, escolhendo numa galeria feita com o seu próprio vídeo. |
 | `/video-motion` | Coloca ou refaz as animações (cards), com prévia antes de gerar. Também cria um vídeo só de animações. |
-| `/video-narrar` | Vídeo só de animações, sem gravar a câmera: você manda o texto (ou o assunto), escolhe uma voz de IA ouvindo amostras (ou manda o seu áudio) e recebe o vídeo com cards e legenda. |
+| `/video-narrar` | Voz de IA (ou o seu áudio). Cria um vídeo só de animações sem gravar a câmera, narra um vídeo seu sem fala (tela, produto), coloca narração em trechos ou troca a sua voz pela voz de IA. |
 | `/video-verticalizar` | Cria a versão 9:16 para Reels, TikTok e Shorts. |
 | `/video-react` | Você + outro vídeo na mesma tela (em cima/embaixo, lado a lado ou no cantinho). |
 | `/video-ajustar` | Muda algo num vídeo pronto: "tira o card 3", "legenda mais pra cima", "manter a frase da piada". |
