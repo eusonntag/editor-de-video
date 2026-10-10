@@ -54,7 +54,7 @@ Digite o número:
 ```
 
 - Não: acesse https://elevenlabs.io, clique em "Sign up" e entre com Google ou e-mail. Para ter créditos: https://elevenlabs.io/app/subscription → "Add credits" (veja o preço atual em https://elevenlabs.io/pricing/api).
-- Chave: em https://elevenlabs.io/app, perfil (canto de baixo, à esquerda) → "API Keys" → "Create API Key", nome `editor-video`, e libere **Text to Speech**, **Voices (leitura)** e **User (leitura)**. Se a mesma chave também for usada para transcrever, libere também **Speech to Text**. Copie a chave (ela só aparece uma vez) e cole aqui.
+- Chave: em https://elevenlabs.io/app, perfil (canto de baixo, à esquerda) → "API Keys" → "Create API Key", nome `editor-video`, e libere **Text to Speech**, **Voices (leitura)**, **User (leitura)** e **Music** (para o fundo musical). Se a mesma chave também for usada para transcrever, libere também **Speech to Text**. Copie a chave (ela só aparece uma vez) e cole aqui.
 - Salve com `{PY} editor.py chave gravar elevenlabs {CHAVE}` e mostre só a versão mascarada. Nunca repita a chave inteira.
 
 ## 3. Texto

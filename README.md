@@ -53,6 +53,7 @@ Lista completa de comandos: [COMO-USAR.md](COMO-USAR.md).
 | Transcrição no seu computador | grátis, mais lenta |
 | Transcrição com ElevenLabs | paga por minuto (opcional) |
 | Narração por voz de IA (ElevenLabs, `/video-narrar`) | créditos pré-pagos, cerca de 1.000 caracteres por minuto de fala (opcional) |
+| Fundo musical por IA (ElevenLabs Music, `/video-musica`) | créditos por minuto de música; uso comercial pede plano pago na ElevenLabs (opcional; dá para usar uma música sua de graça) |
 
 Você só precisa da sua conta do Claude. O `/configurar-transcricao` mostra o passo a passo para criar a conta gratuita do Groq.
 

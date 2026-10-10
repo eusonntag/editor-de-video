@@ -71,6 +71,8 @@ def _erro_api(r) -> str:
     msg = det.get("message", "") if isinstance(det, dict) else (str(det) if det else r.text[:300])
     if r.status_code == 401 and ("missing_permissions" in status or "permission" in msg.lower()):
         return "a chave não tem permissão para isso: crie uma chave com \"Text to Speech\" e \"Voices\" liberados"
+    if status == "ivc_not_permitted" or (isinstance(det, dict) and det.get("code") == "subscription_required"):
+        return "esta voz (clonada) não está liberada no plano atual da ElevenLabs: escolha outra voz ou mude o plano"
     if r.status_code == 401:
         return "chave recusada: confira se copiou inteira"
     if status == "quota_exceeded" or r.status_code == 402:

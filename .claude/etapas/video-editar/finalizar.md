@@ -1,5 +1,20 @@
 # Etapa: finalizar (nome, salvar, verificar, entregar)
 
+## 0. Fundo musical (só na primeira entrega)
+
+Se o vídeo ainda não tem `nome_final`, não existe `videos/.trabalho/<id>/musica/musica.json` e `estado.escolhas.musica` está vazio:
+
+```
+Quer um fundo musical por baixo da voz?
+
+1. Não, sem música
+2. Sim, colocar uma música (feita por IA no clima do vídeo, ou uma sua)
+
+Digite o número:
+```
+
+1 → `{PY} editor.py estado <id> --escolha musica=nao`. 2 → `{PY} editor.py estado <id> --escolha musica=sim` e siga `.claude/etapas/musica.md` (passos 1 a 3); depois volte aqui. Se `config/marca.json` tem `musica.sempre: true`, pule a pergunta e vá direto para a etapa da música.
+
 ## 1. Nome do arquivo
 
 Se `estado.json` já tem `nome_final` (vídeo refeito pelo `/video-ajustar`, `/video-legendar` etc.): use o mesmo nome, sem perguntar, e avise `Vou substituir {nome}_editado.mp4 pela versão nova.`
@@ -43,6 +58,7 @@ Duração: 3:21 (era 4:12)
 Próximos passos:
 - /video-verticalizar: criar a versão para Reels/TikTok {só se ainda não tiver}
 - /video-ajustar: pedir alguma mudança ("tira o card 3", "legenda mais para cima")
+- /video-musica: colocar, trocar ou tirar o fundo musical
 - /video-painel: ver a linha do tempo do vídeo
 - /video-editar: editar o próximo vídeo
 ```

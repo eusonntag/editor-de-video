@@ -20,6 +20,7 @@ Todos os comandos começam com `/` e são digitados no chat do Claude Code, com 
 | `/video-legendar` | Coloca ou troca a legenda, escolhendo numa galeria feita com o seu próprio vídeo. |
 | `/video-motion` | Coloca ou refaz as animações (cards), com prévia antes de gerar. Também cria um vídeo só de animações. |
 | `/video-narrar` | Voz de IA (ou o seu áudio). Cria um vídeo só de animações sem gravar a câmera, narra um vídeo seu sem fala (tela, produto), coloca narração em trechos ou troca a sua voz pela voz de IA. |
+| `/video-musica` | Fundo musical por baixo da voz: criado por IA no clima do vídeo (você ouve amostras) ou uma música sua. Abaixa sozinho quando alguém fala. |
 | `/video-verticalizar` | Cria a versão 9:16 para Reels, TikTok e Shorts. |
 | `/video-react` | Você + outro vídeo na mesma tela (em cima/embaixo, lado a lado ou no cantinho). |
 | `/video-ajustar` | Muda algo num vídeo pronto: "tira o card 3", "legenda mais pra cima", "manter a frase da piada". |

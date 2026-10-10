@@ -24,6 +24,7 @@ Como funciona:
 Editar
 - /video-editar: do começo ao fim (recomendado)
 - /video-narrar: voz de IA, num vídeo novo só de animações ou no seu vídeo (narrar, trechos ou trocar a voz)
+- /video-musica: fundo musical feito por IA ou uma música sua, por baixo da voz
 - /video-cortar: só cortar pausas e erros
 - /video-legendar: colocar ou trocar a legenda
 - /video-motion: colocar ou refazer as animações

@@ -16,7 +16,7 @@ Todo texto do projeto (chat, arquivos .md, JSON, legendas, cards, mensagens de e
 
 ## SEGREDOS SÓ NO .env (REGRA GLOBAL)
 
-- Chaves de API (`GROQ_API_KEY`, `ELEVENLABS_API_KEY`, esta usada na transcrição e na narração) ficam SOMENTE no arquivo `.env` da raiz. Nunca em `.md`, `.json`, `.py` ou em mensagens de commit.
+- Chaves de API (`GROQ_API_KEY`, `ELEVENLABS_API_KEY`, esta usada na transcrição, na narração e na música) ficam SOMENTE no arquivo `.env` da raiz. Nunca em `.md`, `.json`, `.py` ou em mensagens de commit.
 - Na tela, sempre mascaradas: `gsk_ab…9xYz` (6 primeiros e 4 últimos caracteres).
 - Nunca rodar `cat .env` nem imprimir o valor de uma chave. Para testar, use a chave numa chamada e mostre só o resultado (funcionou / não funcionou).
 
@@ -39,6 +39,7 @@ coloco zoom, animações e legenda, e ainda faço a versão para Reels.
 Para começar:
 - /video-editar: editar um vídeo do começo ao fim (recomendado)
 - /video-narrar: voz de IA, num vídeo novo só de animações ou no seu vídeo
+- /video-musica: colocar, trocar ou tirar o fundo musical
 
 Etapas avulsas:
 - /video-cortar: só cortar pausas e erros

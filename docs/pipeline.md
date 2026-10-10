@@ -69,6 +69,7 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 | Conferência | `conferir-layout <id> <formato>` | `<formato>/conferencia.jpg` (3 quadros) |
 | Referência | `baixar-referencia <url> [--nome x]` | instala o yt-dlp na 1ª vez (pedir confirmação antes) |
 | Ícones | `icones buscar "termos em português"` | 5 nomes Phosphor |
+| Música | `musica amostras <id> --prompts "a" "b" [--duracao 15]`, `musica gerar <id> --prompt "…"`, `musica usar <id> --arquivo f`, `musica config <id> [--volume minimo\|baixo\|medio\|alto] [--abaixar sim\|nao] [--trilha arq] [--desligar]`, `musica previa <id> --formato F` | ver "Fundo musical" |
 | Narração | `narrar vozes\|biblioteca [--json]`, `narrar adicionar <dono> <voz> --nome X`, `narrar amostras --vozes a,b --texto-arquivo f --saida pasta [--nomes JSON]`, `narrar custo --texto-arquivo f`, `narrar gerar <id> --texto-arquivo f --voz V [--voz-nome N] [--formato vertical\|horizontal] [--velocidade 0.7–1.2] [--modelo X] [--refazer]`, `narrar audio <id> --audio arq [--formato F] [--refazer]` | ver "Narração" |
 | Motion | `motion <id> validar\|montar\|previa\|galeria\|render --formato F [--estilo X] [--icones Y] [--tipo estilos\|icones]` | |
 | Legenda | `galeria-legendas <id> --formato F [--variar estilo\|fonte\|tamanho\|cor\|contorno\|palavras\|maiusculas\|posicao\|atual]`, `legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N] [--tamanho px]` | galeria: `galeria-legendas[-<variar>].jpg` |
@@ -157,6 +158,13 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 - Na 1ª vez guarda `cortado_sem_narracao.mp4` e `<nome>_sem_narracao.json` (palavras, dinamica, desfoque, motion/roteiro); cada `sobre` novo parte deles (não acumula). `narrar remover <id>` volta tudo. Saídas: `narracao.wav` (só a voz, na linha do tempo nova), `narracao_extra.json`, `estado.narracao_extra`. Desmarca layout, motion, legenda e final.
 - `--so-custo`: só calcula caracteres e créditos e grava `narracao_texto.txt` (para as amostras).
 - Refazer o corte (`cortar`) apaga a narração sobre o vídeo (o corte parte do bruto).
+
+## Fundo musical
+
+- `scripts/musica.py`, config em `.trabalho/<id>/musica/musica.json` (`ativo`, `trilha`, `volume`, `abaixar_na_fala`, `prompt`, `origem` ia|arquivo). Trilhas em `musica/trilha-N.mp3` (IA) ou `musica/trilha-propria.*`; amostras em `musica/amostras/`.
+- IA: ElevenLabs Music, `POST /v1/music` (`prompt`, `music_length_ms` 3 s a 10 min, `force_instrumental: true`, `model_id` `music_v1`). Duração = vídeo + 3 s. Chave com permissão Music. Uso comercial: plano pago da ElevenLabs.
+- Mixagem (`mixar`, chamada pelo `finalizar` quando `ativo`; `musica previa` faz o mesmo em `musica/previa_<formato>.mp4`): música em loop/cortada no tamanho do vídeo, `loudnorm` para ficar N dB abaixo do loudness da voz (minimo 24, baixo 18, medio 14, alto 10; sem voz, referência -16 LUFS), entrada de 1 s e saída de até 2,5 s, `sidechaincompress` com a voz (threshold 0,04, ratio 4, release 600 ms) se `abaixar_na_fala`, `amix normalize=0` + `alimiter level=false`. Vídeo copiado (sem recodificar). Voz mono vira estéreo com `pan` (o `aformat` baixaria 3 dB).
+- A música não entra no `cortado.mp4` nem no `final.mp4` do formato: trocar a música ou o volume é só refazer o `finalizar --substituir`.
 
 ## Legendas
 

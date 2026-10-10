@@ -51,6 +51,12 @@ Narração (vídeo só de animações, sem câmera)
   narrar audio <id> --audio arquivo     áudio gravado pelo aluno (depois transcrever e cortar)
   narrar sobre <id> --modo inteiro|trechos|trocar --voz V …   narração num vídeo existente
   narrar remover <id>                   desfaz a narração sobre o vídeo
+Fundo musical (entra no finalizar, por baixo da voz)
+  musica amostras <id> --prompts "a" "b" [--duracao 15]   trechos para escolher o gênero (ElevenLabs Music)
+  musica gerar <id> --prompt "..."      trilha instrumental do tamanho do vídeo
+  musica usar <id> --arquivo f          música do aluno
+  musica config <id> [--volume baixo|medio|alto] [--abaixar sim|nao] [--trilha arq] [--desligar]
+  musica previa <id> --formato F        vídeo atual + música (musica/previa_F.mp4)
 Chaves (.env)
   chave gravar groq|elevenlabs <valor>  testa e só grava se funcionar (mostra mascarada)
   chave testar groq|elevenlabs
@@ -891,7 +897,11 @@ def cmd_finalizar(a) -> None:
             raise SystemExit(f"✗ o formato {f} ainda não foi montado (layout)")
         destino = C.proxima_versao_livre(nome, f) if (a.nova_versao and C.caminho_final(nome, f).exists()) \
             else C.caminho_final(nome, f)
-        C.copiar(origem, destino)
+        if (C.ler_json(t / "musica" / "musica.json", {}) or {}).get("ativo"):
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            rodar_script("musica.py", "mixar", str(origem), str(destino), "--trab", str(t))
+        else:
+            C.copiar(origem, destino)
         srt = t / f / "legendas.srt"
         if srt.exists() and C.etapa_feita(vid, "legenda", f):
             shutil.copy2(srt, destino.with_suffix(".srt"))
@@ -1044,6 +1054,14 @@ def cmd_narrar(a, extras: list[str]) -> None:
     rodar_script("narrar.py", a.acao, *extras)
 
 
+def cmd_musica(a, extras: list[str]) -> None:
+    """Repassa para scripts/musica.py com a pasta de trabalho do vídeo."""
+    vid = C.id_video(a.id)
+    t = trab(vid)
+    exigir(t / "cortado.mp4", "corte")
+    rodar_script("musica.py", a.acao, str(t), *extras)
+
+
 def cmd_exemplo(a) -> None:
     rodar_script("exemplo.py")
 
@@ -1108,11 +1126,12 @@ def main() -> None:
     p = sub.add_parser("liberar-espaco"); p.add_argument("--confirmar", action="store_true")
     sub.add_parser("exemplo")
     p = sub.add_parser("narrar"); p.add_argument("acao", choices=["vozes", "biblioteca", "adicionar", "amostras", "custo", "gerar", "audio", "sobre", "remover"])
+    p = sub.add_parser("musica"); p.add_argument("acao", choices=["amostras", "gerar", "usar", "config", "previa"]); p.add_argument("id")
     p = sub.add_parser("chave"); p.add_argument("acao", choices=["gravar", "testar", "motor"])
     p.add_argument("servico", nargs="?", choices=["groq", "elevenlabs", "whisper", "scribe"]); p.add_argument("valor", nargs="?")
 
     a, extras = ap.parse_known_args(argv)
-    if extras and a.cmd not in ("layout", "narrar"):
+    if extras and a.cmd not in ("layout", "narrar", "musica"):
         ap.error("argumentos não reconhecidos: " + " ".join(extras))
     funcoes = {
         "videos": cmd_videos, "estado": cmd_estado, "nome": cmd_nome, "transcrever": cmd_transcrever,
@@ -1128,6 +1147,8 @@ def main() -> None:
         cmd_layout(a, extras)
     elif a.cmd == "narrar":
         cmd_narrar(a, extras)
+    elif a.cmd == "musica":
+        cmd_musica(a, extras)
     else:
         funcoes[a.cmd](a)
 
