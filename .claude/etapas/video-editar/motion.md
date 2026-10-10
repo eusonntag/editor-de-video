@@ -61,6 +61,12 @@ Regras:
 - Ícone: para cada card, rode `{PY} editor.py icones buscar "<termos do card em português>"` e escolha entre os 5. Preencha `emoji` também (usado se o estilo de ícone for emoji).
 - Duração mínima de cada tipo no manifesto. Use `lado` só se precisar forçar a lateral.
 
+Vídeo narrado (sem câmera, `layout.json` com `"centralizado": true`): os cards SÃO o vídeo.
+- Cubra a narração inteira, sem tela vazia: o primeiro card começa em ~0,3 s, cada card termina quando o próximo começa e o último vai até o fim do vídeo (`fim` = duração do `cortado.mp4`).
+- Um card por ideia ou frase forte, a cada ~4 a 8 s. Varie os tipos (título, lista, número, destaque, palavra) para não ficar repetitivo; nunca dois do mesmo tipo seguidos se der para evitar.
+- Cards aparecem grandes e no centro, um por vez (o gerador cuida disso). `lado` não se aplica.
+- Primeiro card: o gancho (título ou destaque com a frase de abertura). Último: `chamada-final`.
+
 Valide: `{PY} editor.py motion <id> validar` e corrija os avisos (palavra não encontrada, card curto).
 
 ## 3. Prévia para aprovar

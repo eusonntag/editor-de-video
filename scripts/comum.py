@@ -160,11 +160,18 @@ def ffmpeg_fontsdir() -> str:
 # ------------------------------------------------------------------- vídeos ----
 
 def listar_brutos() -> list[Path]:
-    if not PARA_EDITAR.exists():
-        return []
-    return sorted((p for p in PARA_EDITAR.iterdir()
-                   if p.is_file() and p.suffix.lower() in EXTENSOES_VIDEO),
-                  key=lambda p: p.stat().st_mtime)
+    """Brutos de Para Editar + vídeos narrados (fundo + narração em .trabalho/<id>/<id>.mp4)."""
+    brutos = [p for p in PARA_EDITAR.iterdir()
+              if p.is_file() and p.suffix.lower() in EXTENSOES_VIDEO] if PARA_EDITAR.exists() else []
+    if TRABALHO.exists():
+        brutos += [p / f"{p.name}.mp4" for p in TRABALHO.iterdir()
+                   if p.is_dir() and (p / "narracao.json").exists() and (p / f"{p.name}.mp4").exists()]
+    return sorted(brutos, key=lambda p: p.stat().st_mtime)
+
+
+def narrado(vid: str) -> dict | None:
+    """Dados da narração (tipo ia ou audio) se o vídeo não tem câmera."""
+    return ler_json(TRABALHO / vid / "narracao.json")
 
 
 def achar_bruto(vid: str) -> Path:

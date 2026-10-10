@@ -25,6 +25,10 @@ Medido em 2026-09-18 num PC com Ryzen 5 4600G (6 núcleos), 24 GB de RAM, sem pl
 | Motion: galeria de estilos | cerca de 30 a 60 segundos | medido: 29 s (estilos), 50 s (ícones) |
 | Motion: renderizar | cerca de 4× D | 14 s levaram 56 s |
 | Galeria de legendas | cerca de 10 segundos | |
+| Narração: amostras de voz (3 a 4 vozes) | cerca de 10 a 20 segundos | estimado, falta medir com a chave real |
+| Narração: gravar a narração (voz de IA) | cerca de 10 a 30 segundos por minuto de fala | estimado, falta medir com a chave real |
+| Narração: montar o fundo (por formato) | cerca de 5 a 10 segundos | medido: 18 s de vídeo levaram 7 s |
+| Motion de vídeo narrado: renderizar | cerca de 3× D | medido: 18 s levaram 52 s (vertical) |
 | Legenda | cerca de 0,5× D + 5 segundos | por formato; medido: 14 s levaram 11 a 15 s |
 | Salvar e verificar o vídeo final | cerca de 10 segundos | |
 | Abrir o painel | cerca de 5 segundos | |

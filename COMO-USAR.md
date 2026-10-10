@@ -18,7 +18,8 @@ Todos os comandos começam com `/` e são digitados no chat do Claude Code, com 
 | `/video-editar` | **Porta principal.** Do começo ao fim: corte, zooms, animações, legenda e formatos. Retoma um vídeo pela metade. |
 | `/video-cortar` | Só o corte (pausas, erros, repetições), com estilo natural, dinâmico (zooms) ou acelerado. |
 | `/video-legendar` | Coloca ou troca a legenda, escolhendo numa galeria feita com o seu próprio vídeo. |
-| `/video-motion` | Coloca ou refaz as animações (cards), com prévia antes de gerar. |
+| `/video-motion` | Coloca ou refaz as animações (cards), com prévia antes de gerar. Também cria um vídeo só de animações. |
+| `/video-narrar` | Vídeo só de animações, sem gravar a câmera: você manda o texto (ou o assunto), escolhe uma voz de IA ouvindo amostras (ou manda o seu áudio) e recebe o vídeo com cards e legenda. |
 | `/video-verticalizar` | Cria a versão 9:16 para Reels, TikTok e Shorts. |
 | `/video-react` | Você + outro vídeo na mesma tela (em cima/embaixo, lado a lado ou no cantinho). |
 | `/video-ajustar` | Muda algo num vídeo pronto: "tira o card 3", "legenda mais pra cima", "manter a frase da piada". |
@@ -47,6 +48,11 @@ Todos os comandos começam com `/` e são digitados no chat do Claude Code, com 
 **Reagir a um vídeo**
 1. Coloque o vídeo de referência em `videos/Para Editar/referencias` (ou tenha o link)
 2. `/video-react`
+
+**Vídeo sem aparecer (só animações e narração)**
+1. `/video-narrar` → mande o texto ou só o assunto
+2. Escolha a voz ouvindo as amostras (precisa de créditos pré-pagos na ElevenLabs)
+3. Aprove a narração, o estilo e os cards
 
 **Revisar com o mouse**
 1. `/video-painel`

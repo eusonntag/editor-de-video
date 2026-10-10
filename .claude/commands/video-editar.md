@@ -26,7 +26,7 @@ As etapas ficam em `.claude/etapas/video-editar/`. Leia cada arquivo na hora de 
 
    Digite o número:
    ```
-   Opção 1: leia o `estado.json` desse vídeo e pule direto para a próxima etapa não feita (as escolhas já estão lá).
+   Opção 1: leia o `estado.json` desse vídeo e pule direto para a próxima etapa não feita (as escolhas já estão lá). Se `estado.origem` for `narracao` ou `audio` (vídeo narrado, sem câmera), continue pela `.claude/etapas/narrar.md`.
 
 ---
 

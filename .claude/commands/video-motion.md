@@ -1,13 +1,23 @@
 ---
 name: editor-video:video-motion
-description: Adiciona ou refaz as animações (motion graphics) de um vídeo já cortado - cards com títulos, listas com checks, números animados, passo a passo, frases em destaque, palavra-chave e chamada final, sincronizados com a fala, com ícones e no estilo da marca. Mostra a prévia antes de renderizar. Use para "colocar animação", "motion", "cards", "refazer as animações", "trocar o estilo dos cards", "mais cards".
+description: Adiciona ou refaz as animações (motion graphics) de um vídeo já cortado - cards com títulos, listas com checks, números animados, passo a passo, frases em destaque, palavra-chave e chamada final, sincronizados com a fala, com ícones e no estilo da marca. Mostra a prévia antes de renderizar. Também cria um vídeo só de animações, sem câmera, com narração por voz de IA ou o áudio do aluno. Use para "colocar animação", "motion", "cards", "refazer as animações", "trocar o estilo dos cards", "mais cards", "vídeo só com animação".
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, SendUserFile
 model: opus
 ---
 
 # Adicionar ou refazer as animações
 
-1. **Vídeo**: `.claude/etapas/escolher-video.md` (precisa do corte).
+1. **Vídeo**: pergunte primeiro (pule se o aluno já disse qual vídeo ou já pediu um vídeo sem câmera):
+   ```
+   O que você quer animar?
+
+   1. Um vídeo que eu gravei (colocar os cards por cima)
+   2. Criar um vídeo só de animações, sem gravar: com narração por voz de IA ou com o meu áudio
+
+   Digite o número:
+   ```
+   2 → siga `.claude/etapas/narrar.md` e encerre aqui (ela já inclui motion, legenda e entrega).
+   1 → `.claude/etapas/escolher-video.md` (precisa do corte). Vídeo narrado (`estado.origem` = `narracao` ou `audio`): as regras de vídeo narrado do `motion.md` valem.
 2. **Formatos**: `escolhas.formatos` do estado; se nenhum layout existe, monte o horizontal (ou vertical para bruto em pé) em silêncio. Mais de um formato: `1. Todos / 2. Só o {formato}`.
 3. **Já existe roteiro?** (`videos/.trabalho/<id>/motion/roteiro.json`)
    ```

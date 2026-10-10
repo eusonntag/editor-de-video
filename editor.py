@@ -28,6 +28,7 @@ Corte
   ajustes-tempo <id>                    aplica do painel: tempo dos zooms/cards e desfoques (ajustes.json)
 Formato, motion e legenda
   layout <id> horizontal|vertical|react [--sem-zoom] [opções do react]
+                                        vídeo narrado: horizontal|vertical [--estilo X] [--fundo imagem]
   conferir-layout <id> <formato>
   baixar-referencia <url> [--nome arquivo]
   icones buscar "termos" | icones indexar
@@ -41,6 +42,13 @@ Entrega
   painel [--video <id>] [--parar] [--sem-abrir]
   liberar-espaco [--confirmar]
   exemplo                               testa o editor com o vídeo de exemplo (sem custo)
+Narração (vídeo só de animações, sem câmera)
+  narrar vozes|biblioteca [--json]      vozes da conta / vozes brasileiras da biblioteca ElevenLabs
+  narrar adicionar <dono> <voz> --nome X
+  narrar amostras --vozes a,b --texto-arquivo f --saida pasta
+  narrar custo --texto-arquivo f        caracteres, minutos e créditos
+  narrar gerar <id> --texto-arquivo f --voz V [--formato vertical|horizontal] [--velocidade 1.0]
+  narrar audio <id> --audio arquivo     áudio gravado pelo aluno (depois transcrever e cortar)
 Chaves (.env)
   chave gravar groq|elevenlabs <valor>  testa e só grava se funcionar (mostra mascarada)
   chave testar groq|elevenlabs
@@ -581,10 +589,15 @@ def cmd_layout(a, extras: list[str]) -> None:
     vid = C.id_video(a.id)
     t = trab(vid)
     exigir(t / "cortado.mp4", "corte")
-    args = [str(t), a.formato, *extras]
-    if a.sem_zoom:
-        args.append("--sem-zoom")
-    rodar_script("layout.py", *args)
+    if C.narrado(vid):
+        if a.formato == "react":
+            raise SystemExit("✗ vídeo narrado não tem câmera: use horizontal ou vertical")
+        rodar_script("narrar.py", "layout", str(t), a.formato, *extras)
+    else:
+        args = [str(t), a.formato, *extras]
+        if a.sem_zoom:
+            args.append("--sem-zoom")
+        rodar_script("layout.py", *args)
     C.desmarcar_a_partir(vid, "layout", a.formato)
     lay = json.loads((t / a.formato / "layout.json").read_text(encoding="utf-8"))
     C.marcar_etapa(vid, "layout", a.formato, zooms=lay.get("zooms", 0))
@@ -878,11 +891,18 @@ def cmd_finalizar(a) -> None:
         relatorio.append(v)
         finais[f] = str(destino)
         C.marcar_etapa(vid, "final", f, arquivo=str(destino))
+    narr, mp3 = C.narrado(vid), None
+    if narr and narr.get("tipo") == "ia" and (t / "narracao.wav").exists():
+        mp3 = C.EDITADOS / f"{nome}_narracao.mp3"
+        C.rodar(["ffmpeg", "-y", "-i", str(t / "narracao.wav"), "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)])
     e = C.ler_estado(vid)
     e["nome_final"] = nome
     e.setdefault("arquivos_finais", {}).update(finais)
+    if mp3:
+        e["narracao_mp3"] = str(mp3)
     C.salvar_estado(vid, e)
-    print(json.dumps({"nome": nome, "arquivos": finais, "verificacao": relatorio}, indent=1, ensure_ascii=False))
+    print(json.dumps({"nome": nome, "arquivos": finais, **({"narracao": str(mp3)} if mp3 else {}),
+                      "verificacao": relatorio}, indent=1, ensure_ascii=False))
 
 
 def cmd_painel(a) -> None:
@@ -1011,6 +1031,11 @@ def cmd_chave(a) -> None:
     sys.exit(0 if ok else 1)
 
 
+def cmd_narrar(a, extras: list[str]) -> None:
+    """Repassa para scripts/narrar.py (vozes, amostras, custo, gerar, audio)."""
+    rodar_script("narrar.py", a.acao, *extras)
+
+
 def cmd_exemplo(a) -> None:
     rodar_script("exemplo.py")
 
@@ -1074,11 +1099,12 @@ def main() -> None:
     p.add_argument("--sem-abrir", action="store_true"); p.add_argument("--porta", type=int, default=8765)
     p = sub.add_parser("liberar-espaco"); p.add_argument("--confirmar", action="store_true")
     sub.add_parser("exemplo")
+    p = sub.add_parser("narrar"); p.add_argument("acao", choices=["vozes", "biblioteca", "adicionar", "amostras", "custo", "gerar", "audio"])
     p = sub.add_parser("chave"); p.add_argument("acao", choices=["gravar", "testar", "motor"])
     p.add_argument("servico", nargs="?", choices=["groq", "elevenlabs", "whisper", "scribe"]); p.add_argument("valor", nargs="?")
 
     a, extras = ap.parse_known_args(argv)
-    if extras and a.cmd != "layout":
+    if extras and a.cmd not in ("layout", "narrar"):
         ap.error("argumentos não reconhecidos: " + " ".join(extras))
     funcoes = {
         "videos": cmd_videos, "estado": cmd_estado, "nome": cmd_nome, "transcrever": cmd_transcrever,
@@ -1092,6 +1118,8 @@ def main() -> None:
     }
     if a.cmd == "layout":
         cmd_layout(a, extras)
+    elif a.cmd == "narrar":
+        cmd_narrar(a, extras)
     else:
         funcoes[a.cmd](a)
 

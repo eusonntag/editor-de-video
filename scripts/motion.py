@@ -233,6 +233,20 @@ def zona_card(card: dict, layout: dict, ocupacao: list[tuple]) -> dict:
                 "k": round(k * ajuste.get("escala", 1.0), 3), "compacto": layout.get("orientacao") == "vertical",
                 "origem": "top center"}
 
+    if layout.get("centralizado"):  # vídeo narrado (sem câmera): card grande no meio, acima da legenda
+        leg = zona_legenda(layout)
+        if H > W:
+            m, topo = 70, 200
+            w, k = W - 2 * m, 1.75
+        else:
+            m, topo = int(W * 0.2), int(H * 0.1)
+            w, k = W - 2 * m, 1.6 * W / 1920
+        base = leg[1] - 30
+        dy = int(ajuste.get("dy", 0))
+        return {"x": m, "y": topo + dy, "w": w, "maxh": base - topo - dy, "lado": "topo",
+                "k": round(k * ajuste.get("escala", 1.0), 3), "compacto": False, "origem": "top center",
+                "faixa": (topo, base)}
+
     if H > W:  # vertical: faixa de cima, acima do rosto (UI do Reels ocupa y < 90)
         m = 60
         topo = 96
@@ -404,7 +418,10 @@ if (fio && ult && tp.length > 1) {{
         return h, j
 
     if tipo == "palavra":
-        h = ((ic or "") + f'<div class="grande titulo-fonte">{e(c.get("palavra", ""))}</div><div class="sublinhado"></div>'
+        # palavra longa não pode vazar do card: a fonte encolhe para caber na largura (maiúsculas ≈ 0,72 em por letra)
+        n_letras = max(len(c.get("palavra", "")), 1)
+        px = min(128 * zona["k"], zona["w"] * 0.84 / (n_letras * 0.72))
+        h = ((ic or "") + f'<div class="grande titulo-fonte" style="font-size:{px:.0f}px">{e(c.get("palavra", ""))}</div><div class="sublinhado"></div>'
              + (f'<div class="apoio">{e(c["apoio"])}</div>' if c.get("apoio") else ""))
         j = f"""
 const t0 = {js(c.get("em"))} !== null ? {js(c.get("em"))} - .08 : A + .1;
@@ -633,7 +650,7 @@ def montar(trab: Path, formato: str, estilo: str | None, icones: str | None, med
     cards = [c for c in roteiro["cards"] if c.get("ativo", True)]
     for c in cards:
         c["_logo"] = tem_logo
-    if layout["altura"] > layout["largura"] or layout["formato"] == "react":
+    if layout["altura"] > layout["largura"] or layout["formato"] == "react" or layout.get("centralizado"):
         # uma faixa só para os cards: se dois se encostam no tempo, o anterior sai antes do próximo entrar
         ordem = sorted(cards, key=lambda c: c["inicio"])
         for c, prox in zip(ordem, ordem[1:]):
@@ -671,6 +688,15 @@ def montar(trab: Path, formato: str, estilo: str | None, icones: str | None, med
             estouro = ret[3] > limite_base + 2
             bate_rosto = bool(rosto) and _sobrepoe(ret, rosto, 0) and layout["formato"] != "react"
             bate_leg = _sobrepoe(ret, proibidas["legenda"])
+            if z.get("faixa") and not estouro and not bate_leg:
+                # narrado: centraliza o card na altura livre (o primeiro desenho fica colado no topo)
+                topo_f, base_f = z["faixa"]
+                alvo_y = topo_f + max(0, (base_f - topo_f - cx["h"]) // 2)
+                aj = ajustes.setdefault(c["id"], {})
+                if abs(alvo_y - cx["y"]) > 8 and not aj.get("centrado"):
+                    aj["dy"] = aj.get("dy", 0) + (alvo_y - cx["y"])
+                    aj["centrado"] = True
+                    mudou = True
             if estouro or bate_leg or bate_rosto:
                 aj = ajustes.setdefault(c["id"], {})
                 altura_nat = cx["h"] / z.get("fit", 1.0)
@@ -834,8 +860,13 @@ def galeria(trab: Path, formato: str, tipo: str = "estilos") -> Path:
         icones = ic or est.get("icones", "duotone")
         pub = trab_gal / f"{n:02d}"
         preparar_publico(pub, est, None, marca)
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t_quadro:.2f}", "-i", str(base_mp4), "-frames:v", "1",
-                        str(pub / "fundo.jpg")], check=True)
+        if lay.get("centralizado") and not (lay.get("fundo") or {}).get("imagem"):
+            # vídeo narrado: cada estilo aparece sobre o próprio fundo (escuro, claro…)
+            from narrar import gerar_fundo
+            gerar_fundo(lay["largura"], lay["altura"], est, pub / "fundo.jpg")
+        else:
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t_quadro:.2f}", "-i", str(base_mp4), "-frames:v", "1",
+                            str(pub / "fundo.jpg")], check=True)
         card = json.loads(json.dumps(exemplo))
         card.update({"id": "amostra", "inicio": 0.0, "fim": 3.0, "lado": card.get("lado")})
         c = card.setdefault("campos", {})

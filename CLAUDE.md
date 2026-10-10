@@ -16,7 +16,7 @@ Todo texto do projeto (chat, arquivos .md, JSON, legendas, cards, mensagens de e
 
 ## SEGREDOS SÓ NO .env (REGRA GLOBAL)
 
-- Chaves de API (`GROQ_API_KEY`, `ELEVENLABS_API_KEY`) ficam SOMENTE no arquivo `.env` da raiz. Nunca em `.md`, `.json`, `.py` ou em mensagens de commit.
+- Chaves de API (`GROQ_API_KEY`, `ELEVENLABS_API_KEY`, esta usada na transcrição e na narração) ficam SOMENTE no arquivo `.env` da raiz. Nunca em `.md`, `.json`, `.py` ou em mensagens de commit.
 - Na tela, sempre mascaradas: `gsk_ab…9xYz` (6 primeiros e 4 últimos caracteres).
 - Nunca rodar `cat .env` nem imprimir o valor de uma chave. Para testar, use a chave numa chamada e mostre só o resultado (funcionou / não funcionou).
 
@@ -38,6 +38,7 @@ coloco zoom, animações e legenda, e ainda faço a versão para Reels.
 
 Para começar:
 - /video-editar: editar um vídeo do começo ao fim (recomendado)
+- /video-narrar: criar um vídeo só de animações, com voz de IA (sem gravar)
 
 Etapas avulsas:
 - /video-cortar: só cortar pausas e erros
@@ -85,7 +86,8 @@ Regras: verbo no infinitivo; até 120 s em segundos ("cerca de 45 segundos"), ac
 O aluno não deve precisar sair da conversa para ver uma prévia.
 
 - Toda imagem ou vídeo de prévia vai pela ferramenta `SendUserFile` com `display: "render"` e `status: "normal"`, **antes** da pergunta de aprovação, com uma legenda curta (`caption`), ex.: "Rascunho do corte com os zooms". Galerias, `previa.jpg`, `conferencia.jpg`, `cor-comparacao.jpg`, `verificacao.jpg` e o `rascunho.mp4` entram aqui.
-- Abaixo da pergunta, deixe o caminho absoluto numa linha discreta (`Arquivo: C:\…ascunho.mp4`), para quem preferir abrir fora.
+- Abaixo da pergunta, deixe o caminho absoluto numa linha discreta (`Arquivo: C:\…
+ascunho.mp4`), para quem preferir abrir fora.
 - Se a ferramenta `SendUserFile` não existir nesta sessão (terminal, VS Code), mostre só o caminho absoluto, como texto copiável.
 - Vídeo final entregue: mostre também pelo `SendUserFile`, junto com o caminho.
 

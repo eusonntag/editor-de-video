@@ -13,6 +13,9 @@ transcrever → cortes-base → (Claude edita o EDL) → cortar --rascunho → a
 → layout (horizontal | vertical | react, com os zooms) → motion → legenda → finalizar
 ```
 
+Vídeo narrado (sem câmera): `narrar gerar` (voz de IA: já sai com `cortado.mp4` e `palavras.json`) ou
+`narrar audio` → transcrever → cortar (estilo natural); depois `layout` (fundo) → motion → legenda → finalizar.
+
 Zoom e layout não mudam a duração, então `palavras.json` vale para cards e legendas de todos os formatos.
 
 ## Pastas
@@ -66,6 +69,7 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 | Conferência | `conferir-layout <id> <formato>` | `<formato>/conferencia.jpg` (3 quadros) |
 | Referência | `baixar-referencia <url> [--nome x]` | instala o yt-dlp na 1ª vez (pedir confirmação antes) |
 | Ícones | `icones buscar "termos em português"` | 5 nomes Phosphor |
+| Narração | `narrar vozes\|biblioteca [--json]`, `narrar adicionar <dono> <voz> --nome X`, `narrar amostras --vozes a,b --texto-arquivo f --saida pasta [--nomes JSON]`, `narrar custo --texto-arquivo f`, `narrar gerar <id> --texto-arquivo f --voz V [--voz-nome N] [--formato vertical\|horizontal] [--velocidade 0.7–1.2] [--modelo X] [--refazer]`, `narrar audio <id> --audio arq [--formato F] [--refazer]` | ver "Narração" |
 | Motion | `motion <id> validar\|montar\|previa\|galeria\|render --formato F [--estilo X] [--icones Y] [--tipo estilos\|icones]` | |
 | Legenda | `galeria-legendas <id> --formato F [--variar estilo\|fonte\|tamanho\|cor\|contorno\|palavras\|maiusculas\|posicao\|atual]`, `legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N] [--tamanho px]` | galeria: `galeria-legendas[-<variar>].jpg` |
 | Config. da legenda | `legenda-config [--video <id>] [--definir k=v …] [--limpar k,k\|tudo] [--json]` | sem `--video`: `config/marca.json` → `legenda` (todos os vídeos); com `--video`: `estado.json` → `legenda_opcoes` |
@@ -134,6 +138,16 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 - `personalizado`: seguir o contrato do HyperFrames (timeline GSAP única e pausada, `window.__timelines`, `class="clip"` com `data-start`/`data-duration`/`data-track-index`). Documentação: `npx hyperframes docs` ou https://github.com/heygen-com/hyperframes (skill `talking-head-recut`).
 - NÃO rodar `hyperframes skills` (instala skills globais). Snapshot sempre com `--describe false` (o editor já faz; existe GEMINI_API_KEY em algumas máquinas).
 - Sempre abrir e conferir a `previa.jpg` (Read) antes de mostrar ao aluno e antes do render.
+
+## Narração (vídeo só de animações)
+
+- Voz de IA: ElevenLabs, endpoint `text-to-speech/{voz}/with-timestamps` (alinhamento por caractere → palavras; não precisa transcrever). Chave `ELEVENLABS_API_KEY` com Text to Speech + Voices (leitura) + User (leitura, para o saldo). Créditos pré-pagos (pay as you go) na conta.
+- Modelo: `NARRACAO_MODELO` no `.env` (padrão `eleven_multilingual_v2`, 1 crédito por caractere; `eleven_flash_v2_5` custa metade e soa um pouco mais "robótico"). Texto dividido em parágrafos de até 2.000 caracteres, com `previous_text`/`next_text` para a entonação continuar.
+- Saídas em `.trabalho/<id>/`: `narracao.wav` (0,4 s de silêncio antes, 1,2 s depois), `narracao.json` (tipo `ia`|`audio`, voz, modelo, caracteres), `<id>.mp4` (o "bruto": fundo + narração; `listar_brutos` inclui), `cortado.mp4`, `palavras.json`, `edit/transcripts/<id>.json`, `roteiro-narracao.txt`. `estado.origem` = `narracao` ou `audio`.
+- Áudio do aluno (`narrar audio`): vira `<id>.mp4` com fundo e segue o corte normal (estilo natural, sem zoom).
+- `layout <id> horizontal|vertical [--estilo X] [--fundo img]`: para vídeo narrado, monta o fundo do estilo (gradiente + brilhos nas cores de destaque; escuro se o texto do estilo é claro) com o áudio do `cortado.mp4`. Sem react. `layout.json` sai com `"centralizado": true` e sem rosto.
+- Motion com `centralizado`: cards grandes no centro (horizontal 60% da largura; vertical quase a largura toda), um por vez, centralizados na altura livre acima da legenda. A galeria de estilos usa o fundo de cada estilo.
+- `finalizar` também exporta `videos/Editados/<nome>_narracao.mp3` (só voz de IA).
 
 ## Legendas
 
