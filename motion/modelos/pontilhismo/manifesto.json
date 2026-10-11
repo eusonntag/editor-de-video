@@ -1,0 +1,37 @@
+{
+  "tipo": "pontilhismo",
+  "nome": "Pontilhismo (pontos que formam imagens)",
+  "uso": "Milhares de pontos desenham um retrato, um objeto, uma palavra ou uma forma, e voam de um desenho para o outro conforme a fala. Bom para apresentar uma pessoa, um objeto ou a ideia central.",
+  "duracao_minima": 2.5,
+  "campos": {
+    "etapas": {
+      "obrigatorio": true,
+      "exemplo": [{"imagem": "motion/imagens/leonardo.jpg", "palavra": "Leonardo"},
+                  {"texto": "SIMPLES", "palavra": "simplicidade"},
+                  {"forma": "anel", "palavra": "tudo"}],
+      "obs": "cada etapa é um desenho: imagem (caminho dentro da pasta do vídeo ou absoluto), texto (até ~12 letras) ou forma (circulo, anel, onda, dispersar). palavra/em = quando os pontos viram esse desenho"
+    },
+    "legenda": {
+      "exemplo": "Leonardo da Vinci, 1512",
+      "obs": "linha pequena abaixo do desenho (crédito ou nome)"
+    },
+    "titulo": {
+      "exemplo": "Existe uma frase famosa",
+      "obs": "texto acima do desenho (opcional; o campo destaque deixa parte dele em itálico)"
+    },
+    "destaque": {"exemplo": "famosa"},
+    "proporcao": {
+      "exemplo": 1.0,
+      "obs": "altura/largura do desenho (padrão: a da 1ª imagem, ou 0,75)"
+    },
+    "densidade": {
+      "exemplo": "media",
+      "obs": "baixa, media (padrão) ou alta: quantidade de pontos"
+    }
+  },
+  "animacao": "pontos espalhados se juntam no 1º desenho e se rearranjam a cada etapa; respiram de leve enquanto parados",
+  "campos_comuns": {
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

@@ -11,17 +11,18 @@ Se `config/marca.json` tem `motion.estilo` e `motion.icones`: use e não pergunt
 Senão:
 1. `⏳ Passo 1/4: preparar a galeria de estilos.` → `{PY} editor.py motion <id> galeria --formato <formato principal> --tipo estilos` → abra e confira a imagem.
    ```
-   Escolha o estilo das animações (veja os 4 no seu próprio vídeo):
+   Escolha o estilo das animações (veja os 5 no seu próprio vídeo):
    {caminho absoluto de galeria-estilos.jpg}
 
    1. Escuro elegante
    2. Claro minimalista
    3. Colorido pop
    4. Editorial
+   5. Cinema (texto surgindo do desfoque, destaque em itálico; ótimo em vídeo narrado)
 
    Digite o número:
    ```
-2. Estilo de ícone (sugira o padrão do estilo escolhido: escuro → duotone, claro → linha, pop → preenchido, editorial → linha):
+2. Estilo de ícone (sugira o padrão do estilo escolhido: escuro → duotone, claro → linha, pop → preenchido, editorial → linha, cinema → linha):
    ```
    E os ícones dos cards?
 
@@ -54,7 +55,8 @@ Leia `videos/.trabalho/<id>/palavras.json` (tempos já no vídeo cortado) e escr
 ```
 
 Regras:
-- Cada card tem relação direta com o que está sendo dito: números → `numero`; enumerações → `lista` ou `passos`; ideia central → `titulo`; frase forte → `destaque`; palavra que resume → `palavra`; nome no começo → `apresentacao`; pedido no fim → `chamada-final`.
+- Cada card tem relação direta com o que está sendo dito: números → `numero`; enumerações → `lista` ou `passos`; ideia central → `titulo`; frase forte → `destaque`; palavra que resume → `palavra`; nome no começo → `apresentacao`; pedido no fim → `chamada-final`; pessoa, objeto ou ideia que vale ver desenhada → `pontilhismo`.
+- `pontilhismo`: pontos formam um desenho por etapa (`imagem`, `texto` curto ou `forma`: circulo, anel, orbitas, onda, dispersar), cada um com `palavra`. Cada desenho precisa de ~2 s; no máximo 3 etapas num card de 6 a 8 s. Imagem: só fotos do próprio aluno (ou que ele enviou) e obras de domínio público, salvas em `videos/.trabalho/<id>/motion/imagens/`; foto com rosto tem o fundo recortado sozinha. No máximo 1 ou 2 por vídeo, nos momentos fortes.
 - Ritmo: um card a cada ~6 a 12 s é bom. Não precisa cobrir o vídeo todo. Nunca dois cards ao mesmo tempo no vertical.
 - Sincronia: use `"palavra"` (no card ou em cada item) com a palavra exatamente como falada; o gerador acha o tempo. `inicio` um pouco antes da primeira palavra-chave, `fim` quando o assunto muda.
 - Textos curtos: títulos até ~6 palavras, itens até ~4 palavras. Corrija a grafia (acentos, nomes).

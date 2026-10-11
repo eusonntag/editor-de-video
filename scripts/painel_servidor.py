@@ -226,8 +226,8 @@ def dados_video(vid: str) -> dict:
         "estilos_motion": [{"id": p.stem, **{k: v for k, v in json.loads(p.read_text(encoding="utf-8")).items()
                                              if k in ("nome", "descricao")}}
                            for p in sorted((C.RAIZ / "motion" / "estilos").glob("*.json"),
-                                           key=lambda p: ["escuro", "claro", "pop", "editorial"].index(p.stem)
-                                           if p.stem in ("escuro", "claro", "pop", "editorial") else 9)],
+                                           key=lambda p: ["escuro", "claro", "pop", "editorial", "cinema"].index(p.stem)
+                                           if p.stem in ("escuro", "claro", "pop", "editorial", "cinema") else 9)],
         "ajustes_pendentes": C.ler_json(t / "ajustes.json"),
     }
 

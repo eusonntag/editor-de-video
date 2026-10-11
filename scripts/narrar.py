@@ -231,6 +231,8 @@ def gerar_fundo(W: int, H: int, est: dict, destino: Path) -> None:
     escuro = _lum(texto) > 0.5
     if est["id"] == "pop":
         topo, base = _rgb("#2a1157"), _rgb("#140829")
+    elif est["id"] == "cinema":  # quase preto: os pontos e o texto branco brilham sozinhos
+        topo, base = _rgb("#0b0b0d"), _rgb("#050506")
     elif escuro:
         topo, base = _rgb("#15171d"), _rgb("#0b0c10")
     elif est["id"] == "editorial":

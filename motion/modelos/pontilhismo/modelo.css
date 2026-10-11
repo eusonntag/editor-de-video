@@ -1,0 +1,6 @@
+{{card}} .titulo { font-size: calc(54px * var(--k)); line-height: 1.1; margin-bottom: calc(18px * var(--k)); text-align: center; }
+{{card}} .titulo .palavra-anim { margin-right: .22em; }
+{{card}} canvas.pontos { display: block; width: 100%; height: auto; }
+{{card}} .legenda-pt { margin-top: calc(14px * var(--k)); font-size: calc(22px * var(--k)); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--suave); text-align: center; }
+{{card}}.compacto .titulo { font-size: calc(48px * var(--k)); }

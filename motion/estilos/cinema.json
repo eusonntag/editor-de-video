@@ -1,0 +1,34 @@
+{
+  "id": "cinema",
+  "nome": "Cinema",
+  "descricao": "Sem caixa: texto branco solto no escuro, palavras surgindo do desfoque e destaque em serifa itálica. Clima de documentário; fica melhor em vídeo narrado ou fundo escuro.",
+  "fontes": {"titulo": ["Inter", "Inter-700.ttf", 700], "texto": ["Inter", "Inter-400.ttf", 400], "apoio": ["Inter", "Inter-400.ttf", 400],
+             "destaque": ["Instrument Serif Italico", "InstrumentSerif-Italic.ttf", 400]},
+  "vars": {
+    "--bg": "transparent", "--texto": "#f4f2ee", "--suave": "#8f8b84",
+    "--destaque": "#f4f2ee", "--destaque-2": "#c9c4b8", "--destaque-3": "#8f8b84", "--sobre-destaque": "#111111",
+    "--borda": "none", "--raio": "0px", "--sombra": "none",
+    "--caixinha": "rgba(255,255,255,.06)", "--kicker-espaco": ".22em", "--desfoque": "none"
+  },
+  "kicker_maiusculas": true,
+  "animacao": {"entrada": "power3.out", "mola": "power3.out", "duracao": 0.9, "deslocamento": 0, "revelar": "desfoque"},
+  "icones": "linha",
+  "css": [
+    ".root { text-shadow: 0 2px 18px rgba(0,0,0,.55); }",
+    ".titulo-fonte { font-weight: 700; letter-spacing: -.02em; }",
+    ".destaque-cor { color: var(--destaque); font-family: var(--fonte-destaque), Georgia, serif; font-weight: 400; letter-spacing: 0; }",
+    ".kicker { font-size: calc(18px * var(--k)); }",
+    ".kicker::before { content: \"\\25CF\"; margin-right: .6em; font-size: .7em; vertical-align: .15em; }",
+    ".icone-box { display: none; }",
+    ".card[data-tipo=\"destaque\"] .aspas { display: none; }",
+    ".card[data-tipo=\"destaque\"] .frase { font-family: var(--fonte-texto); font-weight: 400; }",
+    ".card[data-tipo=\"palavra\"] .grande { font-family: var(--fonte-destaque), Georgia, serif; font-weight: 400; text-transform: none; }",
+    ".card[data-tipo=\"palavra\"] .sublinhado { height: 1px !important; opacity: .5; }",
+    ".check svg path { stroke-width: 2.5; }",
+    ".card:not(.centro) .root { background: rgba(6,6,8,.62); backdrop-filter: blur(16px); border-radius: calc(18px * var(--k)); }",
+    ".card:not(.centro) .kicker { color: #b9b4ab; }",
+    ".card.centro .root { text-align: center; }",
+    ".card.centro .cabeca { justify-content: center; }",
+    ".card.centro .cabeca .kicker { flex: none; }"
+  ]
+}

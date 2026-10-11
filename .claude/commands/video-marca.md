@@ -60,7 +60,7 @@ Digite o número:
    Digite o número:
    ```
 5. Logo: `Tem um logo? Coloque o arquivo PNG (de preferência com fundo transparente) na pasta {caminho absoluto de config} e me diga o nome, ou digite 1 para pular.` → confira que existe e grave o caminho relativo (`config/logo.png`).
-6. Estilo das animações: se existir algum vídeo com layout pronto, mostre a galeria com ele (`{PY} editor.py motion <id> galeria --formato <f> --tipo estilos`). Senão, descreva os 4 estilos (texto dos arquivos `motion/estilos/*.json` → `descricao`) e pergunte `1. Escuro elegante / 2. Claro minimalista / 3. Colorido pop / 4. Editorial`.
+6. Estilo das animações: se existir algum vídeo com layout pronto, mostre a galeria com ele (`{PY} editor.py motion <id> galeria --formato <f> --tipo estilos`). Senão, descreva os 5 estilos (texto dos arquivos `motion/estilos/*.json` → `descricao`) e pergunte `1. Escuro elegante / 2. Claro minimalista / 3. Colorido pop / 4. Editorial / 5. Cinema`.
 7. Ícones: `1. Linha / 2. Preenchido / 3. Duotone / 4. Emoji (muda um pouco entre Windows e Mac) / 5. Sem ícones`.
 8. Legenda: galeria se houver vídeo (`galeria-legendas`), senão descreva; `1. Dinâmica / 2. Clássica / 3. Caixa / 4. Palavra`. Depois a cor da palavra em destaque: `1. Amarelo (padrão) / 2. A cor da marca / 3. Branco (sem destaque) / 4. Outra`. Para fonte, tamanho, contorno, tarja e posição da legenda, indique `/configurar-legenda`.
 9. Ritmo de edição padrão: `1. Natural / 2. Dinâmica / 3. Acelerada / 4. Perguntar em cada vídeo`.

@@ -37,7 +37,9 @@ MOTION = RAIZ / "motion"
 MODELOS = MOTION / "modelos"
 ESTILOS = MOTION / "estilos"
 GSAP = RAIZ / "node_modules" / "gsap" / "dist" / "gsap.min.js"
-TIPOS = ["apresentacao", "titulo", "lista", "numero", "destaque", "passos", "palavra", "chamada-final", "personalizado"]
+TIPOS = ["apresentacao", "titulo", "lista", "numero", "destaque", "passos", "palavra", "chamada-final", "pontilhismo",
+         "personalizado"]
+ORDEM_ESTILOS = ["escuro", "claro", "pop", "editorial", "cinema"]
 ESTILOS_ICONE = ["linha", "preenchido", "duotone", "emoji", "nenhum"]
 ACAO_ICONE = {"seguir": ("user-plus", "➕"), "comentar": ("chat-circle-dots", "💬"),
               "compartilhar": ("share-network", "📤"), "link": ("link", "🔗")}
@@ -144,7 +146,7 @@ def resolver_sincronia(card: dict, palavras: list[dict], avisos: list[str]) -> N
                 obj["em"] = t
 
     resolver(c, "falada" if card["tipo"] == "palavra" else "palavra", "card")
-    for lista in ("itens", "passos"):
+    for lista in ("itens", "passos", "etapas"):
         for i, it in enumerate(c.get(lista) or []):
             if isinstance(it, str):
                 c[lista][i] = it = {"texto": it}
@@ -182,7 +184,13 @@ def tempo_cheio(card: dict) -> float:
     t0 = c["em"] if c.get("em") is not None else a
     # quanto cada modelo leva para terminar de montar depois do disparo
     extra = {"apresentacao": 2.0, "titulo": 0.7, "numero": 1.4, "destaque": 1.0, "palavra": 1.1,
-             "chamada-final": 1.2, "lista": 0.9, "passos": 0.9, "personalizado": 1.2}.get(card["tipo"], 1.0)
+             "chamada-final": 1.2, "lista": 0.9, "passos": 0.9, "pontilhismo": 2.0, "personalizado": 1.2}.get(card["tipo"], 1.0)
+    if card["tipo"] == "pontilhismo":  # a prévia mostra o 1º desenho já formado
+        t1 = tempos_etapas(card)
+        if not t1:
+            return round(min(a + 1.0, card["fim"] - 0.35), 3)
+        fim = t1[1] - 0.05 if len(t1) > 1 else card["fim"] - 0.35
+        return round(min(t1[0] + PT_MORFE + 0.6, fim), 3)
     ts = [t0 + extra, a + 1.0]
     for lista in ("itens", "passos"):
         for it in c.get(lista) or []:
@@ -306,6 +314,197 @@ def _palavras(texto: str, destaque: str | None = None) -> str:
 CHECK_SVG = '<svg viewBox="0 0 40 40"><path d="M8 21 L17 30 L33 11" /></svg>'
 
 
+def revelar(alvo: str, t0: str, stagger: float, y: float, dur: float = .4) -> str:
+    """Entrada palavra a palavra: sobe e aparece (padrão) ou surge do desfoque (estilo com "revelar": "desfoque")."""
+    return (f'if (REVELAR === "desfoque") tl.fromTo(sel("{alvo}"), {{opacity: 0, filter: "blur(14px)"}}, '
+            f'{{opacity: 1, filter: "blur(0px)", duration: .75, ease: "power2.out", stagger: {stagger * 1.5:g}}}, {t0});\n'
+            f'else tl.from(sel("{alvo}"), {{opacity: 0, y: {y:g} * K, duration: {dur:g}, ease: ENT, stagger: {stagger:g}}}, {t0});')
+
+
+# ----------------------------------------------------------- pontilhismo ----
+
+PT_MORFE = 1.3  # segundos que os pontos levam para trocar de desenho
+PT_COLUNAS = {"baixa": 70, "media": 95, "alta": 125}
+PT_MAX = 7000
+FORMAS = ("circulo", "anel", "orbitas", "onda", "dispersar")
+
+
+def tempos_etapas(card: dict) -> list[float]:
+    """Instante em que os pontos começam a formar cada desenho."""
+    etapas = card.get("campos", {}).get("etapas") or []
+    a, b = card["inicio"], card["fim"]
+    passo = max(PT_MORFE + 0.4, (b - a - 1.5) / max(1, len(etapas)))
+    ts, ant = [], None
+    for n, et in enumerate(etapas):
+        t = et.get("em") if isinstance(et, dict) and et.get("em") is not None else a + 0.25 + n * passo
+        t = max(t - 0.15, a + 0.1) if ant is None else max(t - 0.15, ant + PT_MORFE + 0.6)  # cada desenho fica pronto e parado um pouco
+        ts.append(round(t, 3))
+        ant = t
+    return ts
+
+
+def _caminho_imagem(card: dict, arq: str) -> Path:
+    p = Path(arq)
+    return p if p.is_absolute() else Path(card.get("_base", ".")) / p
+
+
+def _proporcao(card: dict) -> float:
+    c = card.get("campos", {})
+    if c.get("proporcao"):
+        return max(0.4, min(1.6, float(c["proporcao"])))
+    from PIL import Image
+
+    for et in c.get("etapas") or []:
+        if isinstance(et, dict) and et.get("imagem"):
+            arq = _caminho_imagem(card, et["imagem"])
+            if arq.exists():
+                with Image.open(arq) as im:
+                    return max(0.4, min(1.6, im.height / im.width))
+    return 0.75
+
+
+def _recortar_pessoa(img):
+    """Máscara 0..1 da pessoa (GrabCut a partir do rosto). None se não achar rosto."""
+    import cv2
+    import numpy as np
+
+    rgb = np.asarray(img)
+    esc = min(1.0, 520 / max(rgb.shape[:2]))
+    peq = cv2.resize(rgb, None, fx=esc, fy=esc, interpolation=cv2.INTER_AREA)
+    bgr = cv2.cvtColor(peq, cv2.COLOR_RGB2BGR)
+    casc = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    rostos = casc.detectMultiScale(cv2.equalizeHist(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)), 1.1, 5,
+                                   minSize=(int(min(peq.shape[:2]) * 0.12),) * 2)
+    if len(rostos) == 0:
+        return None
+    x, y, w, h = max(rostos, key=lambda r: r[2] * r[3])
+    H, W = peq.shape[:2]
+    m = np.full((H, W), cv2.GC_PR_BGD, np.uint8)
+    # cabeça e tronco provavelmente pessoa; o rosto com certeza
+    x0, x1 = max(0, int(x - 0.9 * w)), min(W, int(x + 1.9 * w))
+    y0 = max(0, int(y - 0.55 * h))
+    m[y0:, x0:x1] = cv2.GC_PR_FGD
+    m[y + h // 6:y + h * 5 // 6, x + w // 6:x + w * 5 // 6] = cv2.GC_FGD
+    m[:, :max(1, x0 // 2)] = cv2.GC_BGD
+    m[:, W - max(1, (W - x1) // 2):] = cv2.GC_BGD
+    m[:max(1, y0 // 2), :] = cv2.GC_BGD
+    bg, fg = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
+    cv2.grabCut(bgr, m, None, bg, fg, 5, cv2.GC_INIT_WITH_MASK)
+    masc = np.where((m == cv2.GC_FGD) | (m == cv2.GC_PR_FGD), 1.0, 0.0).astype(np.float32)
+    masc = cv2.GaussianBlur(masc, (0, 0), 2.5)
+    return cv2.resize(masc, (rgb.shape[1], rgb.shape[0]), interpolation=cv2.INTER_LINEAR)
+
+
+def _brilho_etapa(card: dict, et: dict, cols: int, rows: int, avisos: list[str]):
+    """Grade (rows x cols) de brilho 0..1 do desenho; "dispersar" para poeira; None se não deu para montar."""
+    import numpy as np
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+    if et.get("imagem"):
+        arq = _caminho_imagem(card, et["imagem"])
+        if not arq.exists():
+            avisos.append(f"{card['id']}: não achei a imagem {arq}")
+            return None
+        with Image.open(arq) as im:
+            cor = ImageOps.exif_transpose(im).convert("RGB")
+        g = ImageOps.autocontrast(cor.convert("L"), cutoff=1)
+        mascara = _recortar_pessoa(cor) if et.get("recortar", "auto") else None
+        if mascara is not None:  # foto de gente: só a pessoa vira ponto, o fundo some
+            g = Image.fromarray((np.asarray(g, np.float32) * mascara).astype(np.uint8))
+        else:
+            a = np.asarray(g)
+            borda = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
+            if et.get("inverter", borda.mean() > 140):  # fundo claro (gravura, foto de estúdio): o escuro vira ponto
+                g = ImageOps.invert(g)
+        g.thumbnail((cols, rows), Image.LANCZOS)
+        grade = np.zeros((rows, cols), np.float32)
+        y0, x0 = (rows - g.height) // 2, (cols - g.width) // 2
+        grade[y0:y0 + g.height, x0:x0 + g.width] = np.asarray(g, np.float32) / 255
+        if et.get("vinheta", True):  # some aos poucos nas bordas, como nos retratos pontilhados
+            yy, xx = np.mgrid[0:rows, 0:cols].astype(np.float32)
+            r = np.hypot((xx - cols / 2) / (g.width / 2 + 1e-6), (yy - rows / 2) / (g.height / 2 + 1e-6))
+            grade *= np.clip(1.35 - r, 0, 1)
+        return grade ** 1.25
+    if et.get("texto"):
+        esc = 6
+        img = Image.new("L", (cols * esc, rows * esc), 0)
+        d = ImageDraw.Draw(img)
+        texto = str(et["texto"])
+        tam = rows * esc
+        while True:
+            fonte = ImageFont.truetype(str(FONTES / "Inter-900.ttf"), tam)
+            x0, y0, x1, y1 = d.textbbox((0, 0), texto, font=fonte)
+            if (x1 - x0 <= img.width * 0.9 and y1 - y0 <= img.height * 0.7) or tam <= 8:
+                break
+            tam = int(tam * 0.92)
+        d.text(((img.width - (x1 - x0)) / 2 - x0, (img.height - (y1 - y0)) / 2 - y0), texto, font=fonte, fill=255)
+        return np.asarray(img.resize((cols, rows), Image.BOX), np.float32) / 255
+    forma = et.get("forma")
+    if forma in FORMAS:
+        if forma == "dispersar":
+            return "dispersar"
+        yy, xx = np.mgrid[0:rows, 0:cols].astype(np.float32)
+        r = np.hypot(xx - cols / 2, yy - rows / 2) / (min(cols, rows) / 2)
+        if forma == "circulo":
+            return np.clip((0.86 - r) * 8, 0, 1) * (0.55 + 0.45 * np.clip(1 - r, 0, 1))
+        if forma == "anel":
+            return np.clip(1 - np.abs(r - 0.8) / 0.07, 0, 1)
+        if forma == "orbitas":
+            g = np.clip((0.16 - r) * 10, 0, 1)
+            for raio in (0.36, 0.58, 0.82):
+                g = np.maximum(g, np.clip(1 - np.abs(r - raio) / 0.025, 0, 1) * 0.8)
+            return g
+        yc = rows / 2 + np.sin(xx / cols * np.pi * 4) * rows * 0.22  # onda
+        return np.clip(1 - np.abs(yy - yc) / (rows * 0.07), 0, 1)
+    avisos.append(f"{card['id']}: etapa sem imagem, texto ou forma ({', '.join(FORMAS)})")
+    return None
+
+
+def pontos_pontilhismo(card: dict, cw: int, ch: int, avisos: list[str]) -> dict:
+    """Pontos (x, y, tamanho×100) de cada desenho no canvas. alvos[0] = poeira espalhada, antes do 1º desenho."""
+    import numpy as np
+
+    c = card.get("campos", {})
+    cols = PT_COLUNAS.get(c.get("densidade"), PT_COLUNAS["media"])
+    passo = cw / cols
+    rows = max(8, int(ch / passo))
+    rng = np.random.default_rng(42)
+
+    def poeira(n: int):  # nuvem arredondada, mais densa no meio
+        lado = min(cw, ch)
+        x, y = rng.normal(0, lado * 0.22, n), rng.normal(0, lado * 0.22, n)
+        return np.stack([cw / 2 + x * cw / lado, ch / 2 + y * ch / lado, rng.uniform(0.08, 0.3, n)], 1)
+
+    nuvens = []
+    for et in c.get("etapas") or []:
+        g = _brilho_etapa(card, et, cols, rows, avisos) if isinstance(et, dict) else None
+        if g is None:
+            continue
+        if isinstance(g, str):
+            nuvens.append(None)
+            continue
+        ys, xs = np.nonzero(g > 0.1)
+        px = (xs + 0.5 + (ys % 2) * 0.5) * passo  # linhas alternadas meio passo: trama de meio-tom
+        py = (ys + 0.5) * (ch / rows)
+        nuvens.append(np.stack([px, py, g[ys, xs]], 1))
+    n = min(PT_MAX, max([len(v) for v in nuvens if v is not None] or [1500]))
+    alvos = [poeira(n)]
+    for v in nuvens:
+        if v is None:
+            alvos.append(poeira(n))
+            continue
+        if len(v) > n:
+            v = v[rng.choice(len(v), n, replace=False)]
+        elif len(v) < n:  # os pontos que sobram vão para cima de pontos do desenho e somem
+            extra = v[rng.integers(0, len(v), n - len(v))].copy()
+            extra[:, 2] = 0
+            v = np.concatenate([v, extra])
+        alvos.append(v[rng.permutation(n)])
+    return {"n": int(n), "raio": round(passo * 0.56, 3),
+            "alvos": [np.concatenate([np.round(a[:, :2]), np.round(a[:, 2:] * 100)], 1).astype(int).ravel().tolist()
+                      for a in alvos]}
+
+
 def modelo(card: dict, est: dict, marca: dict, icones: str, zona: dict) -> tuple[str, str]:
     """(html de dentro do .root, js da animação). No js: I = id, A = início, B = fim."""
     tipo, c = card["tipo"], card.get("campos", {})
@@ -337,7 +536,7 @@ tl.from(sel(".arroba"), {{opacity: 0, scale: .6, duration: .45, ease: MOLA}}, tn
         h = cab(kicker) + f'<div class="titulo titulo-fonte">{_palavras(c.get("titulo", ""), c.get("destaque"))}</div>'
         j = f"""
 const t0 = {js(c.get("em"))} !== null ? {js(c.get("em"))} : A + .2;
-tl.from(sel(".titulo .palavra-anim"), {{opacity: 0, y: 30 * K, duration: .45, ease: ENT, stagger: .09}}, t0);
+{revelar(".titulo .palavra-anim", "t0", .09, 30, .45)}
 tl.from(sel(".destaque-cor"), {{color: "inherit", duration: .4, ease: "power1.out"}}, t0 + .5);"""
         return h, j
 
@@ -388,10 +587,10 @@ tl.from(sel(".legenda-num"), {{opacity: 0, y: 12 * K, duration: .4, ease: ENT}},
         h = (f'<div class="aspas">{svg_icone("quotes", "preenchido")}</div>'
              f'<div class="frase titulo-fonte">{_palavras(c.get("frase", ""), c.get("destaque"))}</div>'
              + (f'<div class="autor">— {e(c["autor"])}</div>' if c.get("autor") else ""))
-        j = """
+        j = ("""
 tl.from(sel(".aspas"), {opacity: 0, scale: .4, rotation: -15, duration: .5, ease: MOLA}, A + .1);
-tl.from(sel(".frase .palavra-anim"), {opacity: 0, y: 18 * K, duration: .35, ease: ENT, stagger: .08}, A + .35);
-tl.from(sel(".autor"), {opacity: 0, x: -20 * K, duration: .4, ease: ENT}, A + .6 + .08 * document.querySelectorAll(sel(".frase .palavra-anim")).length);"""
+""" + revelar(".frase .palavra-anim", "A + .35", .08, 18, .35) + """
+tl.from(sel(".autor"), {opacity: 0, x: -20 * K, duration: .4, ease: ENT}, A + .6 + .08 * document.querySelectorAll(sel(".frase .palavra-anim")).length);""")
         return h, j
 
     if tipo == "passos":
@@ -450,6 +649,55 @@ tl.to(sel(".pilula"), {{scale: 1.07, duration: .25, yoyo: true, repeat: 3, ease:
 tl.fromTo(sel(".pilula svg, .pilula .emoji"), {{rotation: 0}}, {{rotation: 14, duration: .12, yoyo: true, repeat: 5, ease: "power1.inOut"}}, t0 + 1.3);"""
         return h, j
 
+    if tipo == "pontilhismo":
+        avisos = card.setdefault("_avisos", [])
+        k = zona["k"]
+        prop = _proporcao(card)
+        largura = zona["w"] - 2 * 44 * k
+        livre = zona["maxh"] - 2 * 38 * k - (80 * k if c.get("titulo") else 0) - (44 * k if c.get("legenda") else 0)
+        cw = int(max(120, min(largura, livre / prop)))
+        ch = int(cw * prop)
+        dados = pontos_pontilhismo(card, cw, ch, avisos)
+        tempos = tempos_etapas(card)[:len(dados["alvos"]) - 1]
+        if any(t > card["fim"] - PT_MORFE - 0.3 for t in tempos):
+            avisos.append(f"{card['id']}: nem todos os desenhos cabem no tempo do card (cada um precisa de ~{PT_MORFE + 0.6:.1f}s); "
+                          "aumente o fim ou tire uma etapa")
+        h = ((f'<div class="titulo titulo-fonte">{_palavras(c["titulo"], c.get("destaque"))}</div>' if c.get("titulo") else "")
+             + f'<canvas class="pontos" width="{cw}" height="{ch}" style="width:{cw}px;margin:0 auto"></canvas>'
+             + (f'<div class="legenda-pt">{e(c["legenda"])}</div>' if c.get("legenda") else ""))
+        j = (revelar(".titulo .palavra-anim", "A + .2", .09, 24) + f"""
+tl.from(sel(".legenda-pt"), {{opacity: 0, duration: .6, ease: "power2.out"}}, {js(tempos[0] if tempos else card["inicio"])} + 1.2);
+const P = {js(dados)}, T = {js(tempos)}, M = {PT_MORFE};
+const cv = document.querySelector(sel("canvas.pontos")), ctx = cv.getContext("2d");
+const N = P.n, R = P.raio, cor = getComputedStyle(cv.parentNode).color;
+const h1 = function (i) {{ const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }};
+const atraso = new Float32Array(N), fase = new Float32Array(N), curva = new Float32Array(N);
+for (let i = 0; i < N; i++) {{ atraso[i] = h1(i) * .45; fase[i] = h1(i + 7) * 6.283; curva[i] = h1(i + 13) - .5; }}
+const suave = function (p) {{ return p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }};
+function desenhar(t) {{
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = cor;
+  ctx.beginPath();
+  let k = -1;
+  for (let j = 0; j < T.length; j++) if (t >= T[j]) k = j;
+  const a = P.alvos[Math.max(0, k)], b = P.alvos[k + 1] || a;
+  for (let i = 0; i < N; i++) {{
+    const p = k < 0 ? 0 : Math.min(1, Math.max(0, (t - T[k] - atraso[i]) / M)), q = suave(p);
+    const ax = a[3 * i], ay = a[3 * i + 1], bx = b[3 * i], by = b[3 * i + 1];
+    const desvio = Math.sin(Math.PI * q) * curva[i] * .35;
+    let x = ax + (bx - ax) * q - (by - ay) * desvio, y = ay + (by - ay) * q + (bx - ax) * desvio;
+    x += Math.sin(t * 1.1 + fase[i]) * R * .35; y += Math.cos(t * .9 + fase[i]) * R * .35;
+    const r = (a[3 * i + 2] + (b[3 * i + 2] - a[3 * i + 2]) * q) / 100 * R;
+    if (r < .35) continue;
+    ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 6.2832);
+  }}
+  ctx.fill();
+}}
+const o = {{t: A}};
+desenhar(A);
+tl.to(o, {{t: B, duration: B - A, ease: "none", onUpdate: function () {{ desenhar(o.t); }}}}, A);""")
+        return h, j
+
     if tipo == "personalizado":
         return c.get("html", ""), c.get("js", "")
     raise SystemExit(f"tipo desconhecido: {tipo}")
@@ -481,7 +729,8 @@ def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str
         for fam, arq, peso in {v for v in fontes.values()})
     vars_css = ";\n  ".join(f"{k}: {v}" for k, v in est["vars"].items())
     vars_css += (f';\n  --fonte-titulo: "{fontes["titulo"][0]}";\n  --fonte-texto: "{fontes["texto"][0]}";'
-                 f'\n  --kicker-caixa: {"uppercase" if est.get("kicker_maiusculas", True) else "none"};')
+                 f'\n  --kicker-caixa: {"uppercase" if est.get("kicker_maiusculas", True) else "none"};'
+                 f'\n  --fonte-destaque: "{fontes.get("destaque", fontes["titulo"])[0]}";')
     base = (MODELOS / "base.css").read_text(encoding="utf-8")
 
     hosts, css_cards, js_cards = [], [], []
@@ -501,7 +750,7 @@ def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str
             f'transform: scale({fit_escala}); transform-origin: {z["origem"]}; }}')
         inner, j = modelo(card, est, marca, icones, z)
         classes = "root" + (" fio" if est.get("fio_lateral") else "")
-        comp = " compacto" if z.get("compacto") else ""
+        comp = (" compacto" if z.get("compacto") else "") + (" centro" if z.get("faixa") else "")
         dur_card = round(card["fim"] - card["inicio"], 3)
         hosts.append(
             f'<div id="host-{cid}" class="card-host clip" data-card-id="{cid}" data-start="{card["inicio"]:.3f}" '
@@ -541,6 +790,7 @@ def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str
 }}
 {base}
 {chr(10).join(css_cards)}
+{chr(10).join(est.get("css") or [])}
 </style>
 </head>
 <body>
@@ -552,7 +802,7 @@ def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str
 (function () {{
   const tl = window.gsap.timeline({{paused: true}});
   const ENT = {js(est['animacao']['entrada'])}, MOLA = {js(est['animacao']['mola'])};
-  const DUR = {est['animacao']['duracao']}, DESL = {est['animacao']['deslocamento']};
+  const DUR = {est['animacao']['duracao']}, DESL = {est['animacao']['deslocamento']}, REVELAR = {js(est['animacao'].get('revelar', 'subir'))};
   function host(id) {{ return '.card-host[data-card-id="' + id + '"]'; }}
   function entrar(id, a, dx, dy) {{
     tl.set(host(id), {{visibility: "visible"}}, a);
@@ -650,6 +900,7 @@ def montar(trab: Path, formato: str, estilo: str | None, icones: str | None, med
     cards = [c for c in roteiro["cards"] if c.get("ativo", True)]
     for c in cards:
         c["_logo"] = tem_logo
+        c["_base"] = str(trab)
     if layout["altura"] > layout["largura"] or layout["formato"] == "react" or layout.get("centralizado"):
         # uma faixa só para os cards: se dois se encostam no tempo, o anterior sai antes do próximo entrar
         ordem = sorted(cards, key=lambda c: c["inicio"])
@@ -712,6 +963,8 @@ def montar(trab: Path, formato: str, estilo: str | None, icones: str | None, med
             c["_medida"] = cx
         if not mudou:
             break
+    for c in cards:
+        avisos.extend(dict.fromkeys(c.pop("_avisos", [])))
     # verificação final
     for c in cards:
         cx = c.get("_medida")
@@ -841,7 +1094,7 @@ def galeria(trab: Path, formato: str, tipo: str = "estilos") -> Path:
                 it.pop("palavra", None)
 
     if tipo == "estilos":
-        variantes = [(p.stem, None) for p in sorted(ESTILOS.glob("*.json"), key=lambda p: ["escuro", "claro", "pop", "editorial"].index(p.stem) if p.stem in ["escuro", "claro", "pop", "editorial"] else 9)]
+        variantes = [(p.stem, None) for p in sorted(ESTILOS.glob("*.json"), key=lambda p: ORDEM_ESTILOS.index(p.stem) if p.stem in ORDEM_ESTILOS else 9)]
     else:
         est_nome = (marca.get("motion") or {}).get("estilo") or "escuro"
         variantes = [(est_nome, ic) for ic in ESTILOS_ICONE]
