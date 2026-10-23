@@ -26,6 +26,9 @@ Medido em 2026-09-18 num PC com Ryzen 5 4600G (6 núcleos), 24 GB de RAM, sem pl
 | Motion: renderizar | cerca de 4× D | 14 s levaram 56 s |
 | Motion com pontilhismo ou estilo Cinema: renderizar | cerca de 4× D | medido em 2026-10-10: 12 s (vertical, 3 cards, um pontilhismo) levaram 42 s, noutro PC (com GTX 1660 SUPER); em PC sem placa de vídeo conte até 5× D |
 | Galeria de legendas | cerca de 10 segundos | |
+| Personagem: 3 opções de imagem (HeyGen) | 2 a 4 minutos | medido em 2026-10-23: 1 imagem levou cerca de 3 min (as 3 são pedidas juntas) |
+| Vídeo com personagem: gerar os blocos (HeyGen) | cerca de 10× D (os blocos são gerados juntos); mínimo de 2 a 3 minutos | medido em 2026-10-23: 13 s levaram 2 min 16 s; depende da fila da HeyGen |
+| Vídeo com personagem: juntar os blocos | cerca de 0,3× D | estimado |
 | Narração: amostras de voz (3 a 4 vozes) | cerca de 10 a 20 segundos | estimado, falta medir com a chave real |
 | Narração: gravar a narração (voz de IA) | cerca de 10 a 30 segundos por minuto de fala | estimado, falta medir com a chave real |
 | Narração: montar o fundo (por formato) | cerca de 5 a 10 segundos | medido: 18 s de vídeo levaram 7 s |

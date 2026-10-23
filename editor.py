@@ -1000,7 +1000,7 @@ def cmd_liberar_espaco(a) -> None:
     print(f"✅ {round(total / 1e6, 1)} MB liberados ({len(alvos)} vídeos prontos). Os vídeos em Editados e os brutos não foram tocados.")
 
 
-CHAVES = {"groq": "GROQ_API_KEY", "elevenlabs": "ELEVENLABS_API_KEY"}
+CHAVES = {"groq": "GROQ_API_KEY", "elevenlabs": "ELEVENLABS_API_KEY", "heygen": "HEYGEN_API_KEY"}
 
 
 def testar_chave(servico: str, valor: str) -> tuple[bool, str]:
@@ -1010,6 +1010,8 @@ def testar_chave(servico: str, valor: str) -> tuple[bool, str]:
         if servico == "groq":
             r = requests.get("https://api.groq.com/openai/v1/models",
                              headers={"Authorization": f"Bearer {valor}"}, timeout=20)
+        elif servico == "heygen":
+            r = requests.get("https://api.heygen.com/v3/users/me", headers={"x-api-key": valor}, timeout=20)
         else:
             r = requests.get("https://api.elevenlabs.io/v1/user", headers={"xi-api-key": valor}, timeout=20)
     except requests.RequestException:
@@ -1060,6 +1062,16 @@ def cmd_musica(a, extras: list[str]) -> None:
     t = trab(vid)
     exigir(t / "cortado.mp4", "corte")
     rodar_script("musica.py", a.acao, str(t), *extras)
+
+
+def cmd_personagens(a, extras: list[str]) -> None:
+    """Repassa para scripts/personagens.py (saldo, listar, mostrar, opcoes, salvar, editar, apagar)."""
+    rodar_script("personagens.py", a.acao, *extras)
+
+
+def cmd_avatar(a, extras: list[str]) -> None:
+    """Repassa para scripts/avatar.py (vozes, amostras, custo, gerar, juntar)."""
+    rodar_script("avatar.py", a.acao, *extras)
 
 
 def cmd_exemplo(a) -> None:
@@ -1127,11 +1139,13 @@ def main() -> None:
     sub.add_parser("exemplo")
     p = sub.add_parser("narrar"); p.add_argument("acao", choices=["vozes", "biblioteca", "adicionar", "amostras", "custo", "gerar", "audio", "sobre", "remover"])
     p = sub.add_parser("musica"); p.add_argument("acao", choices=["amostras", "gerar", "usar", "config", "previa"]); p.add_argument("id")
+    p = sub.add_parser("personagens"); p.add_argument("acao", choices=["saldo", "listar", "mostrar", "opcoes", "salvar", "editar", "apagar"])
+    p = sub.add_parser("avatar"); p.add_argument("acao", choices=["vozes", "amostras", "custo", "gerar", "juntar"])
     p = sub.add_parser("chave"); p.add_argument("acao", choices=["gravar", "testar", "motor"])
-    p.add_argument("servico", nargs="?", choices=["groq", "elevenlabs", "whisper", "scribe"]); p.add_argument("valor", nargs="?")
+    p.add_argument("servico", nargs="?", choices=["groq", "elevenlabs", "heygen", "whisper", "scribe"]); p.add_argument("valor", nargs="?")
 
     a, extras = ap.parse_known_args(argv)
-    if extras and a.cmd not in ("layout", "narrar", "musica"):
+    if extras and a.cmd not in ("layout", "narrar", "musica", "personagens", "avatar"):
         ap.error("argumentos não reconhecidos: " + " ".join(extras))
     funcoes = {
         "videos": cmd_videos, "estado": cmd_estado, "nome": cmd_nome, "transcrever": cmd_transcrever,
@@ -1149,6 +1163,10 @@ def main() -> None:
         cmd_narrar(a, extras)
     elif a.cmd == "musica":
         cmd_musica(a, extras)
+    elif a.cmd == "personagens":
+        cmd_personagens(a, extras)
+    elif a.cmd == "avatar":
+        cmd_avatar(a, extras)
     else:
         funcoes[a.cmd](a)
 

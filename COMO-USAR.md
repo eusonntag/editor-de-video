@@ -21,6 +21,8 @@ Todos os comandos começam com `/` e são digitados no chat do Claude Code, com 
 | `/video-motion` | Coloca ou refaz as animações (cards), com prévia antes de gerar. Também cria um vídeo só de animações. |
 | `/video-narrar` | Voz de IA (ou o seu áudio). Cria um vídeo só de animações sem gravar a câmera, narra um vídeo seu sem fala (tela, produto), coloca narração em trechos ou troca a sua voz pela voz de IA. |
 | `/video-musica` | Fundo musical por baixo da voz: criado por IA no clima do vídeo (você ouve amostras) ou uma música sua. Abaixa sozinho quando alguém fala. |
+| `/video-personagens` | Cria e guarda apresentadores de IA: você descreve a pessoa, a roupa e o cenário, escolhe entre 3 opções de imagem e salva com o jeito de falar e a voz. Também cria outra roupa ou cenário com o mesmo rosto. |
+| `/video-avatar` | Vídeo com o seu personagem de IA falando, sem gravar nada: roteiro a partir de um tema ou de um vídeo de referência, escolha da voz, custo antes, um trecho de amostra e depois o resto. Sai como uma gravação normal e segue para a edição (cortes, zoom, cards, legenda, Reels). |
 | `/video-verticalizar` | Cria a versão 9:16 para Reels, TikTok e Shorts. |
 | `/video-react` | Você + outro vídeo na mesma tela (em cima/embaixo, lado a lado ou no cantinho). |
 | `/video-ajustar` | Muda algo num vídeo pronto: "tira o card 3", "legenda mais pra cima", "manter a frase da piada". |

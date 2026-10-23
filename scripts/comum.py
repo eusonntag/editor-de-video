@@ -64,6 +64,30 @@ def bin_hyperframes() -> list[str]:
     return ["npx", "--no-install", "hyperframes"]
 
 
+def apagar_pasta(p: Path) -> None:
+    """shutil.rmtree que também apaga pastas marcadas como somente leitura (no Windows, o Google Drive
+    e o OneDrive marcam assim) e tenta de novo se o antivírus segurar um arquivo por um instante."""
+    import stat
+
+    def liberar(func, caminho, _exc):
+        os.chmod(caminho, stat.S_IWRITE)
+        func(caminho)
+
+    for tentativa in range(4):
+        try:
+            if sys.version_info >= (3, 12):
+                shutil.rmtree(p, onexc=liberar)
+            else:
+                shutil.rmtree(p, onerror=liberar)
+            return
+        except FileNotFoundError:
+            return
+        except PermissionError:
+            if tentativa == 3:
+                raise
+            time.sleep(0.5)
+
+
 def rodar(cmd: list[str], silencioso: bool = True, **kw) -> subprocess.CompletedProcess:
     """subprocess.run com check e saída do ffmpeg escondida (erros aparecem se falhar)."""
     if silencioso and "stdout" not in kw and "capture_output" not in kw:

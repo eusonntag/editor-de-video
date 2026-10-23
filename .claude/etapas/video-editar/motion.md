@@ -40,7 +40,7 @@ Senão:
 
 ## 2. Roteiro dos cards (você)
 
-Leia `videos/.trabalho/<id>/palavras.json` (tempos já no vídeo cortado) e escreva `videos/.trabalho/<id>/motion/roteiro.json`:
+Leia `videos/.trabalho/<id>/palavras.json` (tempos já no vídeo cortado) e escreva `videos/.trabalho/<id>/motion/roteiro.json`. Vídeo de personagem de IA (`/video-avatar`): se existir `videos/.trabalho/<id>/avatar/roteiro.json`, use as `notas_edicao` dele como ponto de partida dos cards (números, divisões, nome do produto, chamada final), casando cada nota com a fala pelos tempos do `palavras.json`.
 
 ```json
 {"estilo": "escuro", "icones": "duotone",

@@ -40,6 +40,8 @@ Para começar:
 - /video-editar: editar um vídeo do começo ao fim (recomendado)
 - /video-narrar: voz de IA, num vídeo novo só de animações ou no seu vídeo
 - /video-musica: colocar, trocar ou tirar o fundo musical
+- /video-personagens: criar e salvar apresentadores de IA para os vídeos
+- /video-avatar: vídeo com um personagem de IA falando, sem gravar nada
 
 Etapas avulsas:
 - /video-cortar: só cortar pausas e erros

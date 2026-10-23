@@ -25,6 +25,8 @@ Editar
 - /video-editar: do começo ao fim (recomendado)
 - /video-narrar: voz de IA, num vídeo novo só de animações ou no seu vídeo (narrar, trechos ou trocar a voz)
 - /video-musica: fundo musical feito por IA ou uma música sua, por baixo da voz
+- /video-personagens: criar e salvar apresentadores de IA (imagem aprovada, roupa, jeito de falar e voz)
+- /video-avatar: vídeo com um personagem de IA falando o roteiro, sem gravar nada (depois vai para a edição normal)
 - /video-cortar: só cortar pausas e erros
 - /video-legendar: colocar ou trocar a legenda
 - /video-motion: colocar ou refazer as animações

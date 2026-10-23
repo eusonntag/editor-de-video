@@ -26,3 +26,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# personagens de IA (imagens e dados pessoais)
+config/personagens/

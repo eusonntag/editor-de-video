@@ -71,6 +71,8 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 | Ícones | `icones buscar "termos em português"` | 5 nomes Phosphor |
 | Música | `musica amostras <id> --prompts "a" "b" [--duracao 15]`, `musica gerar <id> --prompt "…"`, `musica usar <id> --arquivo f`, `musica config <id> [--volume minimo\|baixo\|medio\|alto] [--abaixar sim\|nao] [--trilha arq] [--desligar]`, `musica previa <id> --formato F` | ver "Fundo musical" |
 | Narração | `narrar vozes\|biblioteca [--json]`, `narrar adicionar <dono> <voz> --nome X`, `narrar amostras --vozes a,b --texto-arquivo f --saida pasta [--nomes JSON]`, `narrar custo --texto-arquivo f`, `narrar gerar <id> --texto-arquivo f --voz V [--voz-nome N] [--formato vertical\|horizontal] [--velocidade 0.7–1.2] [--modelo X] [--refazer]`, `narrar audio <id> --audio arq [--formato F] [--refazer]` | ver "Narração" |
+| Personagens | `personagens saldo`, `personagens listar [--json]`, `personagens mostrar <slug>`, `personagens opcoes <slug> --prompt "… {variacao} …" --variacoes a b c [--base <slug>[:look]] [--proporcao 16:9\|9:16]`, `personagens salvar <slug> (--opcao N\|--arquivo img) [--look nome] [--dados json]`, `personagens editar <slug> --dados json`, `personagens apagar <slug> [--look nome] --confirmar` | ver "Personagens" |
+| Vídeo com personagem | `avatar vozes [--json]`, `avatar amostras --vozes a,b --saida pasta`, `avatar custo <id>`, `avatar gerar <id> [--blocos 1,3] [--refazer]`, `avatar juntar <id>` | ver "Vídeo com personagem" |
 | Motion | `motion <id> validar\|montar\|previa\|galeria\|render --formato F [--estilo X] [--icones Y] [--tipo estilos\|icones]` | |
 | Legenda | `galeria-legendas <id> --formato F [--variar estilo\|fonte\|tamanho\|cor\|contorno\|palavras\|maiusculas\|posicao\|atual]`, `legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N] [--tamanho px]` | galeria: `galeria-legendas[-<variar>].jpg` |
 | Config. da legenda | `legenda-config [--video <id>] [--definir k=v …] [--limpar k,k\|tudo] [--json]` | sem `--video`: `config/marca.json` → `legenda` (todos os vídeos); com `--video`: `estado.json` → `legenda_opcoes` |
@@ -159,6 +161,20 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 - Na 1ª vez guarda `cortado_sem_narracao.mp4` e `<nome>_sem_narracao.json` (palavras, dinamica, desfoque, motion/roteiro); cada `sobre` novo parte deles (não acumula). `narrar remover <id>` volta tudo. Saídas: `narracao.wav` (só a voz, na linha do tempo nova), `narracao_extra.json`, `estado.narracao_extra`. Desmarca layout, motion, legenda e final.
 - `--so-custo`: só calcula caracteres e créditos e grava `narracao_texto.txt` (para as amostras).
 - Refazer o corte (`cortar`) apaga a narração sobre o vídeo (o corte parte do bruto).
+
+## Personagens
+
+- `scripts/personagens.py` + `scripts/heygen.py` (API v3, chave `HEYGEN_API_KEY`). A API usa uma carteira pré-paga em dólares, separada dos créditos do site (sem saldo: erro 402 `insufficient_credit`). `chave testar heygen` e `personagens saldo` conferem antes de gerar.
+- Salvos em `config/personagens/<slug>/` (fora do git): `personagem.json` (`nome`, `descricao`, `aparencia`, `roupa`, `cenario`, `jeito_de_falar`, `gestos` em inglês para o `motion_prompt` do Avatar IV, `expressividade` low|medium|high, `voz` {provedor, voice_id, nome}, `look_padrao`, `looks` {nome: {imagem, heygen_look, prompt, proporcao}}) + `<look>.jpg`.
+- Opções: `POST /v3/avatars` com `type: "prompt"` (até 1000 caracteres, `aspect_ratio`), uma chamada por variação, US$ 1 cada (medido em 23/10/2026); a resposta traz `avatar_group` e `avatar_item` (o id do look); `GET /v3/avatars/looks/{id}` até sair de `processing` → `preview_image_url`. Novo visual do mesmo rosto: `avatar_id` do look salvo (`--base`). Rascunhos em `.trabalho/personagens/<slug>/` (`opcao-N.jpg`, `opcoes.json`, `galeria.jpg`).
+- Foto própria (`--arquivo`): fica sem `heygen_look`; ainda não dá para usar no `/video-avatar` (precisa de um visual registrado na HeyGen).
+
+## Vídeo com personagem
+
+- `scripts/avatar.py`. Trabalho em `.trabalho/<id>/avatar/`: `roteiro.json` (personagem, look, proporcao, voz, velocidade, titulos, thumbnail, notas_edicao, blocos [{n, texto, gestos}]), `roteiro.md`, `blocos.json` (o que já foi gerado: video_id, texto, arquivo, duracao, custo, tentativa), `bloco-NN.mp4`.
+- Cada bloco é um `POST /v3/videos` (`type: "avatar"`, `avatar_id` = look da HeyGen, Avatar IV padrão, `resolution` 1080p, `aspect_ratio`, `expressiveness` e `motion_prompt` do personagem ou do bloco). Voz HeyGen: `script` + `voice_id` + `voice_settings.speed`. Voz ElevenLabs: o áudio é gerado com `narrar.falar`, enviado por `POST /v3/assets` (multipart `file`) e passado como `audio_asset_id`. `Idempotency-Key` com o hash do pedido evita cobrança dobrada. Espera com `GET /v3/videos/{id}` (`status` completed|failed, `video_url`, `duration`, `failure_message`).
+- Um bloco é refeito quando o texto muda ou com `--refazer`. Custo estimado: 15 caracteres por segundo, cerca de US$ 2,40 por minuto (medido: 13,4 s custaram US$ 0,52; a tabela da API diz US$ 3).
+- `juntar`: concat do ffmpeg (escala, fps e áudio estéreo 48 kHz iguais) → `videos/Para Editar/<id>.mp4`, que segue o `/video-editar` como uma gravação comum. A etapa de motion lê as `notas_edicao`.
 
 ## Fundo musical
 
