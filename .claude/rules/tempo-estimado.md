@@ -26,17 +26,19 @@ Medido em 2026-09-18 num PC com Ryzen 5 4600G (6 núcleos), 24 GB de RAM, sem pl
 | Motion: renderizar | cerca de 4× D | 14 s levaram 56 s |
 | Motion com pontilhismo ou estilo Cinema: renderizar | cerca de 4× D | medido em 2026-10-10: 12 s (vertical, 3 cards, um pontilhismo) levaram 42 s, noutro PC (com GTX 1660 SUPER); em PC sem placa de vídeo conte até 5× D |
 | Galeria de legendas | cerca de 10 segundos | |
+| Buscar imagens no Wikimedia Commons (8 opções) | cerca de 10 segundos | medido em 2026-10-14: 7 s; depende da internet |
 | Personagem: 3 opções de imagem (HeyGen) | 2 a 4 minutos | medido em 2026-10-23: 1 imagem levou cerca de 3 min (as 3 são pedidas juntas) |
 | Vídeo com personagem: gerar os blocos (HeyGen) | cerca de 10× D (os blocos são gerados juntos); mínimo de 2 a 3 minutos | medido em 2026-10-23: 13 s levaram 2 min 16 s; depende da fila da HeyGen |
 | Vídeo com personagem: juntar os blocos | cerca de 0,3× D | estimado |
 | Narração: amostras de voz (3 a 4 vozes) | cerca de 10 a 20 segundos | estimado, falta medir com a chave real |
 | Narração: gravar a narração (voz de IA) | cerca de 10 a 30 segundos por minuto de fala | estimado, falta medir com a chave real |
-| Narração: montar o fundo (por formato) | cerca de 5 a 10 segundos | medido: 18 s de vídeo levaram 7 s |
+| Narração: montar o fundo (por formato) | cerca de 5 a 10 segundos; vídeo longo: cerca de 0,3× D | medido: 18 s de vídeo levaram 7 s; 60 s com 3 capítulos (um fundo por capítulo) levaram 20 s |
 | Música: 3 amostras de 15 segundos | cerca de 30 a 60 segundos | estimado, falta medir com a chave real |
 | Música: compor no tamanho do vídeo | cerca de 20 a 60 segundos | estimado, falta medir com a chave real |
 | Música: prévia ou salvar com música (por formato) | cerca de 5 a 10 segundos | medido: 16 s de vídeo levaram cerca de 3 s (o vídeo não é recodificado) |
 | Narração num vídeo existente: juntar a voz com o vídeo | cerca de 0,5× D + 10 segundos | estimado, falta medir com a chave real (mais a gravação da narração acima) |
 | Motion de vídeo narrado: renderizar | cerca de 3× D | medido: 18 s levaram 52 s (vertical) |
+| Motion de vídeo longo (por capítulo): renderizar | cerca de 3× D na 1ª vez; depois, só os capítulos que mudaram (3× a duração deles) | medido em 2026-10-14: 60 s em 3 capítulos (horizontal, Cinema) levaram 2 min 45 s; refazer 2 dos 3 levou 2 min 9 s |
 | Legenda | cerca de 0,5× D + 5 segundos | por formato; medido: 14 s levaram 11 a 15 s |
 | Salvar e verificar o vídeo final | cerca de 10 segundos | |
 | Abrir o painel | cerca de 5 segundos | |

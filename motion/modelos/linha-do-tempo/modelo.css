@@ -1,0 +1,13 @@
+{{card}} .titulo-3d { font-size: calc(42px * var(--k)); line-height: 1.1; margin-bottom: calc(10px * var(--k)); text-align: center; }
+{{card}} .titulo-3d .palavra-anim { margin-right: .22em; }
+{{card}} .palco { position: relative; perspective: calc(1200px * var(--k)); overflow: hidden; }
+{{card}} .trilho-rot { position: absolute; left: 50%; top: 52%; transform: rotateX(24deg) rotateY(-14deg); transform-style: preserve-3d; }
+{{card}} .trilho3d { position: absolute; left: 0; top: 0; }
+{{card}} .linha-base, {{card}} .linha-cheia { position: absolute; left: 0; top: calc(-2px * var(--k)); height: calc(4px * var(--k)); border-radius: 999px; }
+{{card}} .linha-base { background: color-mix(in srgb, var(--texto) 22%, transparent); }
+{{card}} .linha-cheia { background: var(--destaque); width: 0; }
+{{card}} .evento { position: absolute; top: 0; text-align: center; transform-origin: center 0; }
+{{card}} .ponto { position: absolute; left: 50%; top: calc(-13px * var(--k)); width: calc(26px * var(--k)); height: calc(26px * var(--k));
+  margin-left: calc(-13px * var(--k)); border-radius: 50%; background: var(--destaque); box-shadow: 0 0 0 calc(7px * var(--k)) color-mix(in srgb, var(--destaque) 25%, transparent); }
+{{card}} .data { position: absolute; left: 0; right: 0; bottom: calc(26px * var(--k)); font-size: calc(64px * var(--k)); line-height: 1; color: var(--destaque); }
+{{card}} .texto-ev { position: absolute; left: 0; right: 0; top: calc(30px * var(--k)); font-size: calc(32px * var(--k)); font-weight: 700; line-height: 1.15; }

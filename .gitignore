@@ -1,7 +1,7 @@
 # segredos e configurações pessoais
 .env
 config/marca.json
-config/logo.*
+config/logo*
 .claude/settings.local.json
 
 # instalados por "editor.py instalar"
@@ -29,3 +29,4 @@ desktop.ini
 
 # personagens de IA (imagens e dados pessoais)
 config/personagens/
+.tmp.driveupload/

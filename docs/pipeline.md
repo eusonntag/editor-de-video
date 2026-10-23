@@ -41,6 +41,8 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
   <formato>/final.mp4, legendas.ass/.srt
   motion/roteiro.json                 cards (compartilhado entre formatos)
   motion/<formato>/public/            composição gerada; previa.jpg, galeria-*.jpg, montagem.json
+  motion/<formato>/capitulos/NN/      composição de cada capítulo (vídeo longo); blocos/NN.mp4 = render dele
+  capitulos.json                      capítulos [{titulo, inicio}] na linha do tempo do cortado.mp4
   ajustes.json                        pedidos feitos no painel (lidos pelo /video-ajustar)
 ```
 
@@ -71,9 +73,9 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 | Ícones | `icones buscar "termos em português"` | 5 nomes Phosphor |
 | Música | `musica amostras <id> --prompts "a" "b" [--duracao 15]`, `musica gerar <id> --prompt "…"`, `musica usar <id> --arquivo f`, `musica config <id> [--volume minimo\|baixo\|medio\|alto] [--abaixar sim\|nao] [--trilha arq] [--desligar]`, `musica previa <id> --formato F` | ver "Fundo musical" |
 | Narração | `narrar vozes\|biblioteca [--json]`, `narrar adicionar <dono> <voz> --nome X`, `narrar amostras --vozes a,b --texto-arquivo f --saida pasta [--nomes JSON]`, `narrar custo --texto-arquivo f`, `narrar gerar <id> --texto-arquivo f --voz V [--voz-nome N] [--formato vertical\|horizontal] [--velocidade 0.7–1.2] [--modelo X] [--refazer]`, `narrar audio <id> --audio arq [--formato F] [--refazer]` | ver "Narração" |
-| Personagens | `personagens saldo`, `personagens listar [--json]`, `personagens mostrar <slug>`, `personagens opcoes <slug> --prompt "… {variacao} …" --variacoes a b c [--base <slug>[:look]] [--proporcao 16:9\|9:16]`, `personagens salvar <slug> (--opcao N\|--arquivo img) [--look nome] [--dados json]`, `personagens editar <slug> --dados json`, `personagens apagar <slug> [--look nome] --confirmar` | ver "Personagens" |
+| Personagens | `personagens saldo`, `personagens listar [--json]`, `personagens mostrar <slug>`, `personagens opcoes <slug> --prompt "… {variacao} …" --variacoes a b c [--base <slug>[:look]] [--proporcao 16:9\|9:16]`, `personagens salvar <slug> (--opcao N|--arquivo img) [--look nome] [--dados json] [--sem-heygen]`, `personagens registrar <slug> --look nome`\|--arquivo img) [--look nome] [--dados json]`, `personagens editar <slug> --dados json`, `personagens apagar <slug> [--look nome] --confirmar` | ver "Personagens" |
 | Vídeo com personagem | `avatar vozes [--json]`, `avatar amostras --vozes a,b --saida pasta`, `avatar custo <id>`, `avatar gerar <id> [--blocos 1,3] [--refazer]`, `avatar juntar <id>` | ver "Vídeo com personagem" |
-| Motion | `motion <id> validar\|montar\|previa\|galeria\|render --formato F [--estilo X] [--icones Y] [--tipo estilos\|icones]` | |
+| Motion | `motion <id> validar\|montar\|previa\|galeria\|render --formato F [--estilo X] [--icones Y] [--tipo estilos\|icones] [--capitulo N]` | `--capitulo N` na prévia: só os cards daquele capítulo (`previa-capitulo-NN.jpg`) |
 | Legenda | `galeria-legendas <id> --formato F [--variar estilo\|fonte\|tamanho\|cor\|contorno\|palavras\|maiusculas\|posicao\|atual]`, `legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N] [--tamanho px]` | galeria: `galeria-legendas[-<variar>].jpg` |
 | Config. da legenda | `legenda-config [--video <id>] [--definir k=v …] [--limpar k,k\|tudo] [--json]` | sem `--video`: `config/marca.json` → `legenda` (todos os vídeos); com `--video`: `estado.json` → `legenda_opcoes` |
 | Entrega | `nome <id>` (sugestão), `nome <id> --verificar "x" --formatos a,b`, `finalizar <id> --nome x [--formatos a,b] [--substituir\|--nova-versao]` | código 3 = nome já existe |
@@ -131,7 +133,18 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 ## Motion 2.0
 
 - Claude escreve só `motion/roteiro.json`; o gerador monta HTML, animação, posição, fontes e ícones.
-- Tipos (campos em `motion/modelos/<tipo>/manifesto.json`): `apresentacao`, `titulo`, `lista`, `numero`, `destaque`, `passos`, `palavra`, `chamada-final`, `pontilhismo` e `personalizado` (HTML à mão, saída de emergência).
+- Tipos (campos em `motion/modelos/<tipo>/manifesto.json`): `apresentacao`, `titulo`, `lista`, `numero`, `destaque`, `passos`, `palavra`, `chamada-final`, `pontilhismo`, `capitulo`, `comparacao`, `grafico`, `obra`, `galeria`, `linha-do-tempo`, `orbita` e `personalizado` (HTML à mão, saída de emergência).
+- `capitulo`: vinheta de abertura de capítulo (número grande + título). Sem `numero`, o `montar` usa a posição do card em `capitulos.json` (ou a ordem dos cards `capitulo`).
+- `comparacao`: `lados` = 2 objetos `{rotulo, palavra|em, itens}`; `modo` `errado-certo` põe X e check. `grafico`: `barras` = 2 a 6 `{rotulo, valor, palavra|em, destaque}`, barra proporcional ao maior valor, `prefixo`/`sufixo`/`casas`. No vídeo narrado deitado os dois usam 80% da largura (os outros, 60%). A sincronia (`palavra` → `em`) desce em qualquer lista de objetos dentro dos campos; a prévia pega esses dois no fim do card (já completos).
+- Classe `em-pe` no `.card` quando o quadro é vertical (a comparação empilha os lados).
+- Cards 3D (`obra`, `galeria`, `linha-do-tempo`, `orbita`, função `modelo_3d`): perspectiva do CSS, sem WebGL. Galeria, linha e órbita têm uma função `desenhar(t)` chamada por um tween que cobre o card inteiro (como no pontilhismo): a posição de cada peça sai do tempo, então qualquer quadro sai igual no render por capítulo. Cada troca de foco leva 0,8 s e começa 0,35 s antes da palavra. `obra` deitada põe a imagem à esquerda e os textos à direita. Tamanhos calculados pela altura da faixa livre (não pelo `maxh`, que encolhe quando o card é recentralizado).
+- Imagens dos cards `obra`/`galeria`: copiadas reduzidas (até 1600 px) para `motion/cache-imagens/<hash>.jpg` (o hash muda se o arquivo mudar) e ligadas em `public/img/<hash>-<card>-<n>.jpg` (um nome por uso: o HyperFrames avisa de mídia repetida).
+
+## Imagens do Wikimedia Commons
+
+- `imagens buscar <id> "termos em inglês" [--n 8]`: API do Commons (sem chave; User-Agent próprio), só arquivos JPEG/PNG/WebP com lado menor de 500 px ou mais e licença domínio público, CC0, CC BY ou CC BY-SA. Baixa miniaturas de 480 px em `motion/imagens/_busca/` e monta `galeria.jpg` (número + licença) e `busca.json`.
+- `imagens usar <id> <n> [--nome x]`: baixa a versão de 1600 px como JPEG (PNG transparente ganha fundo escuro) em `motion/imagens/<nome>.jpg` e grava `motion/imagens/creditos.json` (título, autor, licença, link). `imagens creditos <id>` lista.
+- Crédito na tela: `obra` e `galeria` mostram sozinhos ("Autor, CC BY-SA 4.0, via Wikimedia Commons"); `credito` no card troca o texto. `finalizar` grava `videos/Editados/<nome>_creditos.txt` com as imagens dos cards ativos.
 - `pontilhismo`: o gerador amostra cada etapa (imagem, texto ou forma) numa grade de meio-tom (95 colunas; `densidade` baixa/media/alta) e grava os pontos no HTML; um `<canvas>` redesenha a cada quadro a partir do tempo da timeline (determinístico). `alvos[0]` é poeira; cada etapa começa em `palavra`/`em` e leva `PT_MORFE` (1,3 s) + até 0,45 s de atraso por ponto; entre etapas há no mínimo 1,9 s (aviso se não couber). Foto com rosto: GrabCut do OpenCV a partir do rosto recorta a pessoa (`recortar: false` desliga); sem rosto e fundo claro: inverte (`inverter`). `vinheta: false` tira o esmaecido das bordas.
 - Card precisa ter relação direta com a fala: números viram `numero`, listas viram `lista`/`passos`, conceitos viram `titulo`/`palavra`. Um card a cada ~6–12 s é um bom ritmo; nunca dois ao mesmo tempo no vertical.
 - Sincronia: `"palavra": "editar"` no card ou em cada item → aparece quando a palavra é falada (dentro do intervalo do card). `"em": 6.2` força o segundo.
@@ -149,9 +162,18 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 - Modelo: `NARRACAO_MODELO` no `.env` (padrão `eleven_multilingual_v2`, 1 crédito por caractere; `eleven_flash_v2_5` custa metade e soa um pouco mais "robótico"). Texto dividido em parágrafos de até 2.000 caracteres, com `previous_text`/`next_text` para a entonação continuar.
 - Saídas em `.trabalho/<id>/`: `narracao.wav` (0,4 s de silêncio antes, 1,2 s depois), `narracao.json` (tipo `ia`|`audio`, voz, modelo, caracteres), `<id>.mp4` (o "bruto": fundo + narração; `listar_brutos` inclui), `cortado.mp4`, `palavras.json`, `edit/transcripts/<id>.json`, `roteiro-narracao.txt`. `estado.origem` = `narracao` ou `audio`.
 - Áudio do aluno (`narrar audio`): vira `<id>.mp4` com fundo e segue o corte normal (estilo natural, sem zoom).
-- `layout <id> horizontal|vertical [--estilo X] [--fundo img]`: para vídeo narrado, monta o fundo do estilo (gradiente + brilhos nas cores de destaque; escuro se o texto do estilo é claro) com o áudio do `cortado.mp4`. Sem react. `layout.json` sai com `"centralizado": true` e sem rosto.
+- `layout <id> horizontal|vertical [--estilo X] [--fundo img]`: para vídeo narrado, monta o fundo do estilo (gradiente + brilhos nas cores de destaque; escuro se o texto do estilo é claro) com o áudio do `cortado.mp4`. Sem react. `layout.json` sai com `"centralizado": true` e sem rosto. Com `capitulos.json` (2 ou mais), cada capítulo ganha uma variação do fundo (`fundo_<f>_NN.png`: brilhos em outro lugar e cores trocadas, em rodízio de 6) com esmaecido de 1 s começando 0,2 s antes do capítulo; trechos parados e transições são gravados à parte e juntados sem recodificar. `--fundo-unico` desliga; `--fundo img` também.
 - Motion com `centralizado`: cards grandes no centro (horizontal 60% da largura; vertical quase a largura toda), um por vez, centralizados na altura livre acima da legenda. A galeria de estilos usa o fundo de cada estilo.
 - `finalizar` também exporta `videos/Editados/<nome>_narracao.mp3` (só voz de IA).
+- Capítulos: no texto, uma linha `# Título` abre um capítulo (não é falada; `##` também vale). `gerar` grava `capitulos.json` (primeiro em 0, os outros 0,3 s antes da 1ª palavra; texto antes do 1º título vira "Introdução"). Só sai com 2 ou mais capítulos. `roteiro-narracao.txt` guarda o texto com os títulos.
+
+### Vídeo longo: render por capítulo
+
+- `montar` divide o vídeo em trechos quando existe `capitulos.json` ou quando ele tem 150 s ou mais (aí um trecho a cada ~75 s). O corte cai no quadro exato mais próximo do início do capítulo em que nenhum card está na tela (procura até 15 s; trecho mínimo 8 s). Card atravessando o ponto pedido: o trecho começa depois dele (aviso). Os trechos ficam em `montagem.json` → `blocos` (`n`, `inicio`, `fim`, `titulo`, `cards`).
+- Cada trecho é uma composição própria em `motion/<f>/capitulos/NN/` (o HyperFrames não aceita duas na mesma pasta): os mesmos cards com os tempos do vídeo inteiro, vídeo de fundo com `data-media-start`, sem áudio, e uma timeline que só avança a principal de A até B (`tweenFromTo`). A duração sai meio milésimo abaixo do número exato de quadros (o HyperFrames arredonda para cima); sobra de quadro é aparada.
+- `render` refaz só os trechos cujo HTML ou `base.mp4` mudaram (assinatura em `blocos/NN.json`), junta com o concat do ffmpeg (cópia, sem recodificar) e põe o som do `base.mp4`. Se cair no meio, rodar de novo continua de onde parou.
+- `finalizar` com `capitulos.json` grava `videos/Editados/<nome>_capitulos.txt` ("0:00 Título", para a descrição do YouTube) e avisa se o YouTube não vai mostrar (menos de 3, primeiro fora de 0:00, algum com menos de 10 s).
+- Vídeo com câmera também pode ter capítulos: escreva `capitulos.json` à mão (tempos do `cortado.mp4`) antes do `montar`.
 
 ### Narração num vídeo existente (`narrar sobre`)
 
@@ -167,7 +189,8 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 - `scripts/personagens.py` + `scripts/heygen.py` (API v3, chave `HEYGEN_API_KEY`). A API usa uma carteira pré-paga em dólares, separada dos créditos do site (sem saldo: erro 402 `insufficient_credit`). `chave testar heygen` e `personagens saldo` conferem antes de gerar.
 - Salvos em `config/personagens/<slug>/` (fora do git): `personagem.json` (`nome`, `descricao`, `aparencia`, `roupa`, `cenario`, `jeito_de_falar`, `gestos` em inglês para o `motion_prompt` do Avatar IV, `expressividade` low|medium|high, `voz` {provedor, voice_id, nome}, `look_padrao`, `looks` {nome: {imagem, heygen_look, prompt, proporcao}}) + `<look>.jpg`.
 - Opções: `POST /v3/avatars` com `type: "prompt"` (até 1000 caracteres, `aspect_ratio`), uma chamada por variação, US$ 1 cada (medido em 23/10/2026); a resposta traz `avatar_group` e `avatar_item` (o id do look); `GET /v3/avatars/looks/{id}` até sair de `processing` → `preview_image_url`. Novo visual do mesmo rosto: `avatar_id` do look salvo (`--base`). Rascunhos em `.trabalho/personagens/<slug>/` (`opcao-N.jpg`, `opcoes.json`, `galeria.jpg`).
-- Foto própria (`--arquivo`): fica sem `heygen_look`; ainda não dá para usar no `/video-avatar` (precisa de um visual registrado na HeyGen).
+- Foto própria (`salvar --arquivo`): `POST /v3/assets` + `POST /v3/avatars` com `type: "photo"` e `avatar_group_id` do personagem (`heygen_grupo`), então todos os visuais ficam no mesmo personagem da HeyGen. Cobrado (medido em 23/10/2026: US$ 1,31 por foto). `--sem-heygen` só salva; `personagens registrar <slug> --look <nome>` registra depois.
+- Gestos: bloco do roteiro > `looks.<nome>.gestos` > `gestos` do personagem.
 
 ## Vídeo com personagem
 
@@ -186,7 +209,7 @@ videos/.trabalho/<id>/                <id> = nome do bruto sem extensão
 ## Legendas
 
 - Estilos: `dinamica` (padrão, 1–3 palavras, maiúsculas, palavra falada em cor), `classica` (aulas/YouTube), `caixa` (tarja), `palavra` (uma por vez).
-- Opções finas (`/configurar-legenda`): `fonte` (montserrat, poppins, inter, space-grotesk, playfair), `cor`, `destaque`, `cor_texto`, `cor_contorno`, `contorno` (sem, fino, normal, grosso), `fundo` (nenhum, tarja, translucido), `cor_caixa`, `escala`, `tamanho`, `max_palavras`, `maiusculas`, `animacao` (pop, nenhuma), `posicao` (baixo, centro), `subir`. Ordem: estilo < marca < vídeo < opção explícita do `legendar`. Lista completa: `legenda-config --json`.
+- Opções finas (`/configurar-legenda`): `fonte` (montserrat, poppins, inter, space-grotesk, playfair), `cor`, `destaque`, `cor_texto`, `cor_contorno`, `contorno` (sem, fino, normal, grosso, brilho), `sombra` (auto, forte), `fundo` (nenhum, tarja, translucido, sombreado), `destaque_tipo` (cor, caixa, maior), `cor_caixa`, `escala`, `tamanho`, `max_palavras`, `maiusculas`, `animacao` (pop, nenhuma), `posicao` (baixo, centro), `subir`. Ordem: estilo < marca < vídeo < opção explícita do `legendar`. Lista completa: `legenda-config --json`.
 - Fontes TTF em `assets/fontes` (Montserrat, Inter, Poppins, Playfair Display, Space Grotesk): iguais no Windows e no Mac.
 - Posição vem do `layout.json`: horizontal 8% da altura; vertical abaixo do queixo e acima de y ≈ 1570 (interface do Reels/TikTok); react na emenda.
 - Termos errados: `edit/correcoes.json` = `{"errado": "Certo"}`; aplicado no próximo `cortar` (ou `palavras <id>`), depois refazer a legenda.

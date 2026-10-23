@@ -90,7 +90,7 @@ def main() -> int:
     if not video.exists():
         raise SystemExit("falta exemplo/video.mp4 (baixe o projeto de novo)")
     if TRAB.exists():
-        shutil.rmtree(TRAB)
+        C.apagar_pasta(TRAB)
     (TRAB / "edit" / "transcripts").mkdir(parents=True)
     shutil.copy2(EX / "transcricao.json", TRAB / "edit" / "transcripts" / f"{video.stem}.json")
 

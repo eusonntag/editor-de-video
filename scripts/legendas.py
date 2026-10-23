@@ -16,7 +16,7 @@ Uso:
           --posicao baixo|centro  --margem-v 380  --centro-y 960  --tamanho 80  --max-palavras 3
           --opcoes '{"escala": 1.2, "contorno": "grosso"}'  (chaves em OPCOES; a marca vale como padrão)
   galeria: python -X utf8 scripts/legendas.py palavras.json --video base.mp4 --galeria galeria.jpg [--em 4.2]
-           [--variar estilo|fonte|tamanho|cor|contorno|palavras|maiusculas|posicao|atual]
+           [--variar estilo|fonte|tamanho|cor|contorno|destaque|leitura|palavras|maiusculas|posicao|atual]
 """
 
 from __future__ import annotations
@@ -62,8 +62,10 @@ OPCOES = {
     "destaque": "true/false: pinta a palavra falada",
     "cor_texto": "cor das letras (#hex, padrão branco)",
     "cor_contorno": "cor do contorno (#hex, padrão preto)",
-    "contorno": "sem | fino | normal | grosso",
-    "fundo": "nenhum | tarja | translucido",
+    "contorno": "sem | fino | normal | grosso | brilho (contorno esfumado)",
+    "sombra": "auto | forte (sombra projetada escura)",
+    "fundo": "nenhum | tarja | translucido | sombreado (faixa escura suave atrás)",
+    "destaque_tipo": "cor | caixa (caixa colorida atrás da palavra) | maior (palavra cresce)",
     "cor_caixa": "cor da tarja (#hex)",
     "escala": "tamanho relativo (1 = padrão; 0.8 pequena, 1.2 grande)",
     "tamanho": "tamanho da letra em px (vence a escala)",
@@ -147,7 +149,7 @@ def gerar_ass(palavras: list[dict], largura: int, altura: int, estilo: str = "di
               cor_caixa: str | None = None, escala: float | None = None, maiusculas: bool | None = None,
               destaque: bool | None = None, cor_texto: str | None = None, cor_contorno: str | None = None,
               contorno: str | None = None, fundo: str | None = None, animacao: str | None = None,
-              subir: float | None = None) -> str:
+              subir: float | None = None, sombra: str | None = None, destaque_tipo: str | None = None) -> str:
     cfg = ESTILOS[estilo]
     retrato = altura > largura
     fonte = fonte_familia(fonte) or cfg["fonte"]
@@ -161,6 +163,9 @@ def gerar_ass(palavras: list[dict], largura: int, altura: int, estilo: str = "di
     maiusculas = cfg["maiusculas"] if maiusculas is None else bool(maiusculas)
     com_destaque = cfg["destaque"] if destaque is None else bool(destaque)
     fundo = fundo or ("tarja" if cfg["caixa"] else "nenhum")
+    dtipo = destaque_tipo or "cor"
+    if dtipo == "caixa" and fundo in ("tarja", "translucido"):
+        fundo = "nenhum"  # a caixa da palavra já é o fundo; tarja por cima a esconderia
     pop_ligado = (animacao or ("nenhuma" if estilo == "classica" else "pop")) == "pop"
     if margem_v is None:
         margem_v = int(altura * (0.26 if retrato else 0.08))
@@ -170,16 +175,26 @@ def gerar_ass(palavras: list[dict], largura: int, altura: int, estilo: str = "di
     grosso = estilo in ("dinamica", "palavra")
     espessura = contorno or ("normal" if grosso else "fino")
     contorno = {"sem": 0, "fino": max(2, tamanho // 18), "normal": max(3, tamanho // 12),
-                "grosso": max(4, tamanho // 8)}.get(espessura, max(2, tamanho // 18))
+                "grosso": max(4, tamanho // 8), "brilho": max(6, tamanho // 5)}.get(espessura, max(2, tamanho // 18))
     negrito = -1
 
     branco = "&H00FFFFFF"
     destaque_ass = cor_ass(cor)
     texto_cor = cor_ass(cor_texto) if cor_texto else branco
     contorno_cor = cor_ass(cor_contorno) if cor_contorno else "&H00000000"
-    sombra = 0 if grosso else 1
-    if espessura == "sem":
-        sombra = max(2, tamanho // 22)  # sem contorno: sombra suave para ler em fundo claro
+    sombra_cor = "&H80000000"
+    prefixo = ""
+    if sombra == "forte":
+        sombra, sombra_cor = max(3, tamanho // 13), "&H20000000"  # sombra projetada, quase opaca
+    else:
+        sombra = 0 if grosso else 1
+        if espessura == "sem":
+            sombra = max(2, tamanho // 22)  # sem contorno: sombra suave para ler em fundo claro
+    if espessura == "brilho":
+        # contorno largo e esfumado: um "halo" escuro que separa a letra de qualquer fundo
+        if not cor_contorno:
+            contorno_cor = "&H00000000"
+        prefixo = f"{{\\blur{max(4, tamanho // 7)}}}"
     borda_estilo = 1
     if fundo == "tarja":
         # tarja sólida: fundo na cor da caixa (branco por padrão), texto escuro ou claro conforme o fundo
@@ -191,9 +206,9 @@ def gerar_ass(palavras: list[dict], largura: int, altura: int, estilo: str = "di
         if cor.lower() == cor_fundo.lower():
             destaque_ass = "&H00141414"
     elif fundo == "translucido":
-        # tarja escura semitransparente (estilo streaming)
-        borda_estilo, contorno, sombra = 3, max(8, tamanho // 5), 0
-        contorno_cor = cor_ass(cor_caixa or "#000000", "60")
+        # tarja escura semitransparente (estilo streaming), uma caixa só por linha (sem faixas entre as palavras)
+        borda_estilo, contorno, sombra = 4, 0, max(8, tamanho // 5)
+        sombra_cor = cor_ass(cor_caixa or "#000000", "60")
     margem_h = int(largura * 0.08)
     cab = f"""[Script Info]
 ScriptType: v4.00+
@@ -204,39 +219,82 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Leg,{fonte},{tamanho},{texto_cor},{texto_cor},{contorno_cor},&H80000000,{negrito},0,0,0,100,100,0,0,{borda_estilo},{contorno},{sombra},{alinhamento},{margem_h},{margem_h},{margem_v},1
+Style: Leg,{fonte},{tamanho},{texto_cor},{texto_cor},{contorno_cor},{sombra_cor},{negrito},0,0,0,100,100,0,0,{borda_estilo},{contorno},{sombra},{alinhamento},{margem_h},{margem_h},{margem_v},1
+Style: Caixa,{fonte},{tamanho},&HFF000000,&HFF000000,{destaque_ass},&HFF000000,{negrito},0,0,0,100,100,0,0,3,{max(6, tamanho // 7)},0,{alinhamento},{margem_h},{margem_h},{margem_v},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     pos = f"{{\\an5\\pos({largura // 2},{centro_y})}}" if centro_y is not None else ""
+    # palavra em destaque na caixa: letra escura ou clara conforme a cor da caixa
+    texto_na_caixa = "&H00141414" if luminancia(cor) > 0.55 else branco
+    volta_borda = f"{{\\bord{contorno}\\shad{sombra}}}"
+
+    def linhas(textos: list[str], hi: int | None, pop: str) -> list[tuple[int, str, str]]:
+        """(camada, estilo, texto): o texto vai na camada 2; no destaque em caixa, a caixa da palavra na 1."""
+        if hi is None:
+            return [(2, "Leg", f"{pos}{prefixo}{pop}{' '.join(textos)}")]
+        if dtipo == "caixa":
+            partes = [f"{{\\bord0\\shad0\\c{texto_na_caixa}}}{t}{volta_borda}{{\\c{texto_cor}}}" if j == hi else t
+                      for j, t in enumerate(textos)]
+            caixa = [f"{{\\3a&H00&}}{t}{{\\3a&HFF&}}" if j == hi else t for j, t in enumerate(textos)]
+            return [(1, "Caixa", f"{pos}{pop}{{\\3a&HFF&}}{' '.join(caixa)}"),
+                    (2, "Leg", f"{pos}{prefixo}{pop}{' '.join(partes)}")]
+        if dtipo == "maior":
+            partes = [f"{{\\fscx122\\fscy122\\c{destaque_ass}}}{t}{{\\fscx100\\fscy100\\c{texto_cor}}}" if j == hi
+                      else t for j, t in enumerate(textos)]
+            return [(2, "Leg", f"{pos}{prefixo}{' '.join(partes)}")]
+        partes = [f"{{\\c{destaque_ass}}}{t}{{\\c{texto_cor}}}" if j == hi else t for j, t in enumerate(textos)]
+        return [(2, "Leg", f"{pos}{prefixo}{pop}{' '.join(partes)}")]
+
+    def eventos_de(s: float, e: float, textos: list[str], hi: int | None, pop: str) -> list[str]:
+        return [f"Dialogue: {camada},{ts(s)},{ts(e)},{est},,0,0,0,,{texto}"
+                for camada, est, texto in linhas(textos, hi, pop)]
+
     blocos = agrupar(palavras, max_palavras, max_chars, pausa=0.45)
     eventos: list[str] = []
+    trechos: list[list[float]] = []  # quando há legenda na tela (para o fundo sombreado)
     for bi, bloco in enumerate(blocos):
         inicio = bloco[0]["start"]
         fim = bloco[-1]["end"] + 0.25
         if bi + 1 < len(blocos):
             prox = blocos[bi + 1][0]["start"]
             fim = prox if prox - bloco[-1]["end"] < 0.5 else min(fim, prox)
+        if trechos and inicio - trechos[-1][1] < 0.3:
+            trechos[-1][1] = fim
+        else:
+            trechos.append([inicio, fim])
         textos = [limpar(w["text"]) for w in bloco]
         if maiusculas:
             textos = [t.upper().rstrip(",;:") for t in textos]
         if estilo == "palavra" and max_palavras == 1:
             pop = "{\\fscx125\\fscy125\\t(0,110,\\fscx100\\fscy100)}" if pop_ligado else ""
-            eventos.append(f"Dialogue: 0,{ts(inicio)},{ts(fim)},Leg,,0,0,0,,{pos}{pop}{textos[0].rstrip('.!?')}")
+            hi = 0 if com_destaque else None
+            eventos += eventos_de(inicio, fim, [textos[0].rstrip(".!?")], hi, pop)
         elif com_destaque:
-            volta = texto_cor
             for wi, w in enumerate(bloco):
                 s = inicio if wi == 0 else w["start"]
                 e = bloco[wi + 1]["start"] if wi + 1 < len(bloco) else fim
                 if e <= s:
                     continue
-                partes = [f"{{\\c{destaque_ass}}}{t}{{\\c{volta}}}" if j == wi else t for j, t in enumerate(textos)]
                 pop = "{\\fscx112\\fscy112\\t(0,90,\\fscx100\\fscy100)}" if wi == 0 and pop_ligado else ""
-                eventos.append(f"Dialogue: 0,{ts(s)},{ts(e)},Leg,,0,0,0,,{pos}{pop}{' '.join(partes)}")
+                eventos += eventos_de(s, e, textos, wi, pop)
         else:
             pop = "{\\fscx112\\fscy112\\t(0,90,\\fscx100\\fscy100)}" if pop_ligado else ""
-            eventos.append(f"Dialogue: 0,{ts(inicio)},{ts(fim)},Leg,,0,0,0,,{pos}{pop}{' '.join(textos)}")
+            eventos += eventos_de(inicio, fim, textos, None, pop)
+    if fundo == "sombreado":
+        # faixa escura bem esfumada atrás da legenda: lê em qualquer fundo, sem "caixa" aparente
+        if centro_y is not None:
+            meio = centro_y
+        elif alinhamento == 5:
+            meio = altura // 2
+        else:
+            meio = altura - margem_v - int(tamanho * 0.6)
+        alt = int(tamanho * 3.4)
+        topo = max(0, meio - alt // 2)
+        faixa = (f"{{\\an7\\pos(0,{topo})\\p1\\bord0\\shad0\\blur{max(20, tamanho // 2)}\\c&H000000&\\1a&H58&"
+                 f"\\fad(150,150)}}m 0 0 l {largura} 0 {largura} {alt} 0 {alt}{{\\p0}}")
+        eventos = [f"Dialogue: 0,{ts(a)},{ts(b)},Leg,,0,0,0,,{faixa}" for a, b in trechos] + eventos
     return cab + "\n".join(eventos) + "\n"
 
 
@@ -289,9 +347,11 @@ def momento_com_fala(palavras: list[dict], video: Path | None = None) -> float:
     return quadro_bom(video, candidatos)
 
 
-VARIACOES = ("estilo", "fonte", "tamanho", "cor", "contorno", "palavras", "maiusculas", "posicao", "atual")
+VARIACOES = ("estilo", "fonte", "tamanho", "cor", "contorno", "destaque", "leitura", "palavras", "maiusculas",
+             "posicao", "atual")
 # opções que dependem do estilo: na comparação de estilos cada um aparece do seu jeito
-DO_ESTILO = ("fonte", "max_palavras", "maiusculas", "fundo", "destaque", "contorno", "animacao")
+DO_ESTILO = ("fonte", "max_palavras", "maiusculas", "fundo", "destaque", "contorno", "animacao", "sombra",
+             "destaque_tipo")
 
 
 def variantes(tipo: str, estilo: str, opcoes: dict, marca: dict) -> list[tuple[str, str, dict]]:
@@ -313,13 +373,35 @@ def variantes(tipo: str, estilo: str, opcoes: dict, marca: dict) -> list[tuple[s
         lista = [(n, estilo, {**opcoes, "cor": c, "destaque": True}) for n, c in cores]
         return lista + [("Sem destaque", estilo, {**opcoes, "destaque": False})]
     if tipo == "contorno":
-        sem_fundo = {**opcoes, "fundo": "nenhum"}
+        sem_fundo = {**opcoes, "fundo": "nenhum", "sombra": None}
         return [("Sem contorno", estilo, {**sem_fundo, "contorno": "sem"}),
                 ("Contorno fino", estilo, {**sem_fundo, "contorno": "fino"}),
                 ("Contorno normal", estilo, {**sem_fundo, "contorno": "normal"}),
                 ("Contorno grosso", estilo, {**sem_fundo, "contorno": "grosso"}),
-                ("Tarja escura", estilo, {**opcoes, "fundo": "translucido", "cor_caixa": None}),
-                ("Tarja branca", estilo, {**opcoes, "fundo": "tarja", "cor_caixa": None})]
+                ("Grosso com sombra", estilo, {**sem_fundo, "contorno": "grosso", "sombra": "forte"}),
+                ("Brilho escuro", estilo, {**sem_fundo, "contorno": "brilho"}),
+                ("Fundo escurecido", estilo, {**sem_fundo, "contorno": opcoes.get("contorno"), "fundo": "sombreado"}),
+                ("Tarja escura", estilo, {**opcoes, "fundo": "translucido", "cor_caixa": None, "sombra": None}),
+                ("Tarja branca", estilo, {**opcoes, "fundo": "tarja", "cor_caixa": None, "sombra": None})]
+    if tipo == "destaque":
+        com = {**opcoes, "destaque": True}
+        return [("Palavra colorida", estilo, {**com, "destaque_tipo": "cor"}),
+                ("Caixa colorida na palavra", estilo, {**com, "destaque_tipo": "caixa"}),
+                ("Palavra maior", estilo, {**com, "destaque_tipo": "maior"}),
+                ("Sem destaque", estilo, {**opcoes, "destaque": False})]
+    if tipo == "leitura":
+        # combinações que leem bem em vídeo colorido ou com muita coisa na tela
+        limpo = {**opcoes, "fundo": "nenhum", "sombra": None, "cor_texto": None, "cor_contorno": None}
+        cor = opcoes.get("cor") or COR_PADRAO
+        escura = cor if luminancia(cor) < 0.45 else "#D4145A"  # destaque claro some no contorno branco
+        return [("Contorno grosso e sombra", estilo, {**limpo, "contorno": "grosso", "sombra": "forte"}),
+                ("Brilho escuro", estilo, {**limpo, "contorno": "brilho"}),
+                ("Fundo escurecido", estilo, {**limpo, "contorno": "normal", "fundo": "sombreado"}),
+                ("Tarja escura", estilo, {**limpo, "fundo": "translucido", "cor_caixa": None}),
+                ("Caixa colorida na palavra", estilo, {**limpo, "contorno": "grosso", "destaque": True,
+                                                       "destaque_tipo": "caixa"}),
+                ("Letra preta, contorno branco", estilo, {**limpo, "contorno": "grosso", "cor_texto": "#141414",
+                                                          "cor_contorno": "#FFFFFF", "cor": escura})]
     if tipo == "palavras":
         return [(n, estilo, {**opcoes, "max_palavras": q})
                 for n, q in (("1 palavra", 1), ("2 palavras", 2), ("3 palavras", 3), ("Frase (até 7)", 7))]

@@ -1,0 +1,12 @@
+{{card}} .titulo-3d { font-size: calc(42px * var(--k)); line-height: 1.1; margin-bottom: calc(22px * var(--k)); text-align: center; }
+{{card}} .titulo-3d .palavra-anim { margin-right: .22em; }
+{{card}} .palco { position: relative; perspective: calc(1500px * var(--k)); transform-style: preserve-3d; }
+{{card}} .peca { position: absolute; left: 50%; top: 0; transform-style: preserve-3d; }
+{{card}} .foto { border-radius: calc(14px * var(--k)); overflow: hidden; background: #111;
+  box-shadow: 0 calc(30px * var(--k)) calc(60px * var(--k)) rgba(0,0,0,.5), 0 0 0 calc(2px * var(--k)) rgba(255,255,255,.08); }
+{{card}} .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+{{card}} .texto-peca { display: flex; align-items: center; justify-content: center; text-align: center; padding: calc(24px * var(--k));
+  background: color-mix(in srgb, var(--destaque) 18%, #141418); color: var(--texto); line-height: 1.1; }
+{{card}} .rotulo-peca { margin-top: calc(12px * var(--k)); font-size: calc(26px * var(--k)); font-weight: 700; display: flex; justify-content: center; white-space: nowrap; }
+{{card}} .credito { font-size: calc(15px * var(--k)); color: var(--suave); text-align: center; margin-top: calc(14px * var(--k)); line-height: 1.3; }
+{{card}} .credito-canto { position: absolute; left: calc(20px * var(--k)); right: calc(20px * var(--k)); bottom: calc(8px * var(--k)); margin: 0; font-size: calc(13px * var(--k)); opacity: .8; }

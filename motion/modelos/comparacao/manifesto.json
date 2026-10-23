@@ -1,0 +1,52 @@
+{
+  "tipo": "comparacao",
+  "nome": "Comparação (antes e depois)",
+  "uso": "Dois lados lado a lado: antes/depois, errado/certo, sem/com, mito/verdade. 1 a 3 itens por lado.",
+  "duracao_minima": 4.0,
+  "campos": {
+    "titulo": {
+      "exemplo": "Como a maioria faz × como funciona"
+    },
+    "modo": {
+      "padrao": "antes-depois",
+      "opcoes": [
+        "antes-depois",
+        "errado-certo"
+      ],
+      "obs": "errado-certo põe um X no lado da esquerda e um check no da direita"
+    },
+    "lados": {
+      "obrigatorio": true,
+      "exemplo": [
+        {
+          "rotulo": "Antes",
+          "palavra": "antes",
+          "itens": [
+            {
+              "texto": "Posta sem gancho",
+              "palavra": "posta"
+            }
+          ]
+        },
+        {
+          "rotulo": "Depois",
+          "palavra": "depois",
+          "itens": [
+            {
+              "texto": "Abre com uma pergunta",
+              "palavra": "pergunta"
+            }
+          ]
+        }
+      ],
+      "obs": "exatamente 2 lados; o lado aparece na palavra dele e cada item na sua (ou em, em segundos). O da direita ganha a cor de destaque"
+    }
+  },
+  "animacao": "lado esquerdo entra, divisória cresce, lado direito entra destacado; itens aparecem quando são falados",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

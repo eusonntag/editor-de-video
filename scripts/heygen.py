@@ -86,6 +86,18 @@ def criar_look(nome: str, prompt: str, proporcao: str = "16:9", base: str | None
     return look
 
 
+def criar_look_foto(nome: str, arquivo: Path, grupo: str | None = None) -> tuple[str, str | None]:
+    """Foto própria → photo avatar. Com `grupo`, entra no mesmo personagem da HeyGen. Devolve (look, grupo)."""
+    corpo = {"type": "photo", "name": nome, "file": {"type": "asset_id", "asset_id": enviar_asset(arquivo)}}
+    if grupo:
+        corpo["avatar_group_id"] = grupo
+    d = req("POST", "/v3/avatars", corpo).get("data") or {}
+    look = _id_look(d)
+    if not look:
+        raise ErroHeygen(f"✗ a HeyGen não aceitou a foto: {str(d)[:300]}")
+    return look, (d.get("avatar_group") or {}).get("id") or (d.get("avatar_item") or {}).get("group_id") or grupo
+
+
 def esperar_look(look: str, limite: float = 600) -> dict:
     fim = time.time() + limite
     while True:

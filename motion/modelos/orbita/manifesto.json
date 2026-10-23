@@ -1,0 +1,43 @@
+{
+  "tipo": "orbita",
+  "nome": "Órbita 3D",
+  "uso": "Uma ideia central com 3 a 6 palavras girando em volta (o que compõe, o que influencia, o que gira em torno).",
+  "duracao_minima": 4.0,
+  "campos": {
+    "centro": {
+      "obrigatorio": true,
+      "exemplo": "Seu cliente"
+    },
+    "titulo": {
+      "exemplo": "Tudo gira em torno dele"
+    },
+    "itens": {
+      "obrigatorio": true,
+      "exemplo": [
+        {
+          "texto": "Dor",
+          "palavra": "dor"
+        },
+        {
+          "texto": "Desejo",
+          "palavra": "desejo"
+        },
+        {
+          "texto": "Objeção",
+          "palavra": "objeção"
+        }
+      ],
+      "obs": "palavras curtas (1 a 2); cada uma entra na órbita quando é falada"
+    },
+    "palavra": {
+      "obs": "palavra falada em que o centro aparece (ou em)"
+    }
+  },
+  "animacao": "centro surge; palavras entram numa órbita inclinada e giram devagar, maiores quando passam na frente",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

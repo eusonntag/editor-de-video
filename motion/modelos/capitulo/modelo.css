@@ -1,0 +1,9 @@
+{{card}} .num-cap { font-size: calc(150px * var(--k)); line-height: .9; color: var(--destaque); font-variant-numeric: tabular-nums;
+  letter-spacing: -.03em; margin-top: calc(6px * var(--k)); }
+{{card}} .fio-cap { height: calc(5px * var(--k)); width: calc(160px * var(--k)); background: var(--destaque); border-radius: 999px;
+  margin: calc(20px * var(--k)) 0 calc(18px * var(--k)); }
+{{card}} .titulo { font-size: calc(62px * var(--k)); line-height: 1.08; }
+{{card}} .titulo .palavra-anim { margin-right: .22em; }
+{{card}}.centro .fio-cap { margin-left: auto; margin-right: auto; }
+{{card}}.compacto .num-cap { font-size: calc(110px * var(--k)); }
+{{card}}.compacto .titulo { font-size: calc(50px * var(--k)); }

@@ -1,0 +1,34 @@
+{
+  "tipo": "linha-do-tempo",
+  "nome": "Linha do tempo 3D",
+  "uso": "2 a 6 marcos em ordem (anos, etapas de uma história, versões). A câmera anda pela linha.",
+  "duracao_minima": 4.0,
+  "campos": {
+    "titulo": {
+      "exemplo": "Como chegamos aqui"
+    },
+    "itens": {
+      "obrigatorio": true,
+      "exemplo": [
+        {
+          "data": "1995",
+          "texto": "Primeiro site",
+          "palavra": "1995"
+        },
+        {
+          "data": "2010",
+          "texto": "Chega o Instagram",
+          "palavra": "2010"
+        }
+      ],
+      "obs": "data curta (ano, Dia 1, Fase 2) e texto até ~5 palavras; palavra/em = quando a câmera chega"
+    }
+  },
+  "animacao": "linha inclinada em perspectiva; a câmera desliza até cada marco e a linha vai se preenchendo",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

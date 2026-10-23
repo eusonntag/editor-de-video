@@ -1,0 +1,38 @@
+{
+  "tipo": "obra",
+  "nome": "Obra em 3D",
+  "uso": "Uma imagem (quadro, foto, produto, pessoa) flutuando em 3D, girando devagar, com título e crédito.",
+  "duracao_minima": 3.0,
+  "campos": {
+    "imagem": {
+      "obrigatorio": true,
+      "exemplo": "motion/imagens/mona-lisa.jpg",
+      "obs": "caminho dentro da pasta do vídeo (motion/imagens/x.jpg): foto do aluno, imagem que ele enviou ou do Wikimedia Commons (editor.py imagens buscar/usar). O crédito do Commons aparece sozinho"
+    },
+    "titulo": {
+      "exemplo": "Mona Lisa"
+    },
+    "destaque": {
+      "exemplo": "Lisa"
+    },
+    "legenda": {
+      "exemplo": "Leonardo da Vinci, 1503"
+    },
+    "kicker": {
+      "exemplo": "A obra"
+    },
+    "credito": {
+      "obs": "só se quiser trocar o crédito automático"
+    },
+    "palavra": {
+      "obs": "palavra falada em que a imagem entra (ou em)"
+    }
+  },
+  "animacao": "quadro entra girando do fundo, brilho passa pela superfície, gira devagar até o fim; título e crédito sobem",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

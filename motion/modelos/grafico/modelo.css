@@ -1,0 +1,16 @@
+{{card}} .titulo-graf { font-size: calc(40px * var(--k)); line-height: 1.12; margin-bottom: calc(26px * var(--k)); }
+{{card}} .barras { display: flex; flex-direction: column; gap: calc(20px * var(--k)); text-align: left; }
+{{card}} .barra-linha { display: grid; grid-template-columns: minmax(0, 30%) 1fr auto; align-items: center; gap: calc(18px * var(--k)); }
+{{card}} .rotulo-barra { font-size: calc(30px * var(--k)); font-weight: 700; line-height: 1.1; color: var(--suave); }
+{{card}} .barra-linha.forte .rotulo-barra { color: var(--texto); }
+{{card}} .trilho-barra { height: calc(44px * var(--k)); border-radius: calc(12px * var(--k)); background: var(--caixinha); overflow: hidden; }
+{{card}} .enche-barra { height: 100%; width: 0; border-radius: calc(12px * var(--k));
+  background: color-mix(in srgb, var(--texto) 34%, transparent); }
+{{card}} .barra-linha.forte .enche-barra { background: var(--destaque); }
+{{card}} .valor-barra { font-family: var(--fonte-titulo); font-weight: 900; font-size: calc(40px * var(--k)); min-width: calc(110px * var(--k));
+  text-align: right; font-variant-numeric: tabular-nums; }
+{{card}} .barra-linha.forte .valor-barra { color: var(--destaque); }
+{{card}} .legenda-graf { font-size: calc(24px * var(--k)); color: var(--suave); margin-top: calc(20px * var(--k)); }
+{{card}}.compacto .barras { gap: calc(12px * var(--k)); }
+{{card}}.compacto .trilho-barra { height: calc(32px * var(--k)); }
+{{card}} .titulo-graf .palavra-anim { margin-right: .22em; }

@@ -112,13 +112,55 @@ def falar(texto: str, voz: str, modelo: str, velocidade: float = 1.0,
 
 # -------------------------------------------------------------------- texto ----
 
-def ler_texto(arq: Path) -> str:
+CAPITULO = re.compile(r"^#{1,3}[ \t]+(.+?)[ \t]*#*$")
+
+
+def ler_roteiro(arq: Path) -> tuple[str, list[dict]]:
+    """Texto falado e capítulos. Linha "# Título" abre um capítulo (não é falada);
+    cada capítulo guarda o índice da primeira palavra dele em "palavra"."""
     t = arq.read_text(encoding="utf-8").replace("\r\n", "\n").strip()
-    t = re.sub(r"[ \t]+", " ", t)
-    t = re.sub(r"\n{3,}", "\n\n", t)
+    linhas, capitulos, n_pal = [], [], 0
+    for linha in t.split("\n"):
+        m = CAPITULO.match(linha.strip())
+        if m:
+            capitulos.append({"titulo": m.group(1).strip(), "palavra": n_pal})
+            linhas += ["", ""]  # o título sempre fecha o parágrafo anterior
+            continue
+        linhas.append(linha)
+        n_pal += sum(1 for tok in linha.split() if re.search(r"\w", tok))
+    t = re.sub(r"[ \t]+", " ", "\n".join(linhas)).strip()
+    t = re.sub(r"\n[ \t]*\n(\s*\n)+", "\n\n", t)
     if not t:
         raise ErroNarracao("✗ o texto da narração está vazio")
-    return t
+    # capítulo sem nenhuma fala depois (título solto no fim ou dois títulos seguidos): fica o último
+    limpos: list[dict] = []
+    for c in capitulos:
+        if c["palavra"] >= n_pal:
+            continue
+        if limpos and limpos[-1]["palavra"] == c["palavra"]:
+            limpos[-1] = c
+        else:
+            limpos.append(c)
+    if limpos and limpos[0]["palavra"] > 0:
+        limpos.insert(0, {"titulo": "Introdução", "palavra": 0})
+    return t, limpos
+
+
+def ler_texto(arq: Path) -> str:
+    return ler_roteiro(arq)[0]
+
+
+def tempos_capitulos(capitulos: list[dict], palavras: list[dict]) -> list[dict]:
+    """Capítulos na linha do tempo: o primeiro em 0 (o YouTube exige 0:00), os outros 0,3 s antes da 1ª palavra."""
+    out = []
+    for i, c in enumerate(capitulos):
+        if c["palavra"] >= len(palavras):
+            break
+        inicio = 0.0 if i == 0 else round(max(0.0, palavras[c["palavra"]]["start"] - 0.3), 2)
+        if out and inicio <= out[-1]["inicio"]:
+            continue
+        out.append({"titulo": c["titulo"], "inicio": inicio})
+    return out
 
 
 def pedacos(texto: str, limite: int = TAMANHO_PEDACO) -> list[str]:
@@ -222,8 +264,14 @@ def estilo_atual(trab: Path, estilo: str | None) -> dict:
     return est
 
 
-def gerar_fundo(W: int, H: int, est: dict, destino: Path) -> None:
-    """Gradiente suave + dois brilhos difusos nas cores do estilo. Escuro se o texto dos cards é claro."""
+# onde ficam os dois brilhos em cada variação do fundo (uma por capítulo, em rodízio): (x, y) de cada um, em frações
+VARIACOES_FUNDO = [((0.12, 0.10), (0.92, 0.88)), ((0.88, 0.12), (0.10, 0.86)), ((0.50, -0.08), (0.50, 1.10)),
+                   ((0.04, 0.50), (0.96, 0.52)), ((0.78, 0.30), (0.18, 0.95)), ((0.30, 0.02), (0.80, 0.70))]
+
+
+def gerar_fundo(W: int, H: int, est: dict, destino: Path, variante: int = 0) -> None:
+    """Gradiente suave + dois brilhos difusos nas cores do estilo. Escuro se o texto dos cards é claro.
+    variante muda o lugar dos brilhos e troca as cores de lado (fundo diferente em cada capítulo)."""
     import numpy as np
     from PIL import Image
 
@@ -244,8 +292,11 @@ def gerar_fundo(W: int, H: int, est: dict, destino: Path) -> None:
     img = np.broadcast_to(img, (H, W, 3)).copy()
     yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
     raio = max(W, H) * 0.55
-    for cor, (cx, cy), forca in ((est["vars"]["--destaque"], (0.12, 0.10), 0.16 if escuro else 0.12),
-                                 (est["vars"]["--destaque-2"], (0.92, 0.88), 0.10 if escuro else 0.08)):
+    p1, p2 = VARIACOES_FUNDO[variante % len(VARIACOES_FUNDO)]
+    c1, c2 = est["vars"]["--destaque"], est["vars"]["--destaque-2"]
+    if variante % 2:
+        c1, c2 = c2, c1
+    for cor, (cx, cy), forca in ((c1, p1, 0.16 if escuro else 0.12), (c2, p2, 0.10 if escuro else 0.08)):
         d2 = ((xx - cx * W) ** 2 + (yy - cy * H) ** 2) / (raio ** 2)
         a = (np.exp(-d2 * 2.2) * forca)[..., None]
         img = img * (1 - a) + np.array(_rgb(cor), np.float32) * a
@@ -275,6 +326,52 @@ def montar_video(fundo: Path, audio: Path, destino: Path, dur: float, fps: int =
     tmp.replace(destino)
 
 
+TROCA_FUNDO = 1.0  # segundos da transição entre o fundo de um capítulo e o do próximo
+
+
+def montar_video_capitulos(fundos: list[tuple[Path, float]], audio: Path, destino: Path, dur: float,
+                           fps: int = 30) -> None:
+    """Um fundo por capítulo, com um esmaecido de TROCA_FUNDO s começando um pouco antes de cada capítulo.
+    Cada trecho parado e cada transição são gravados à parte (com os mesmos parâmetros) e juntados sem
+    recodificar: só a transição custa processamento, então vale para vídeos longos."""
+    total = round(dur * fps)
+    n_troca = round(TROCA_FUNDO * fps)
+    marcos = [0]
+    for _, inicio in fundos[1:]:
+        k = round(max(0.0, inicio - 0.2) * fps)
+        if k - marcos[-1] >= n_troca + 1 and total - k >= n_troca + 1:
+            marcos.append(k)
+        else:  # capítulo colado no anterior ou no fim: fica com o fundo anterior
+            marcos.append(None)
+    x264 = ["-c:v", "libx264", "-preset", "veryfast", "-tune", "stillimage", "-crf", "18", "-g", str(fps),
+            "-pix_fmt", "yuv420p", "-r", str(fps), "-an"]
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pasta, partes = Path(tmp_dir), []
+        validos = [(img, k) for (img, _), k in zip(fundos, marcos) if k is not None]
+        for i, (img, k) in enumerate(validos):
+            ini = k + (n_troca if i else 0)
+            fim = validos[i + 1][1] if i + 1 < len(validos) else total
+            if i:
+                troca = pasta / f"{i:02d}a.mp4"
+                C.rodar(["ffmpeg", "-y", "-loop", "1", "-framerate", str(fps), "-i", str(validos[i - 1][0]),
+                         "-loop", "1", "-framerate", str(fps), "-i", str(img), "-filter_complex",
+                         f"[0:v][1:v]xfade=transition=fade:duration={TROCA_FUNDO}:offset=0,format=yuv420p",
+                         "-frames:v", str(n_troca), *x264, str(troca)])
+                partes.append(troca)
+            if fim > ini:
+                parado = pasta / f"{i:02d}b.mp4"
+                C.rodar(["ffmpeg", "-y", "-loop", "1", "-framerate", str(fps), "-i", str(img),
+                         "-frames:v", str(fim - ini), *x264, str(parado)])
+                partes.append(parado)
+        lista = pasta / "lista.txt"
+        lista.write_text("".join(f"file '{p.as_posix()}'\n" for p in partes), encoding="utf-8")
+        tmp = destino.with_suffix(".tmp.mp4")
+        C.rodar(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lista), "-i", str(audio),
+                 "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-t", f"{dur:.3f}", "-c:a", "aac", "-b:a", "192k",
+                 "-ar", "48000", "-movflags", "+faststart", str(tmp)])
+    tmp.replace(destino)
+
+
 def pasta_nova(vid: str, refazer: bool = False) -> Path:
     vid = C.limpar_nome(vid)
     if not vid:
@@ -283,7 +380,7 @@ def pasta_nova(vid: str, refazer: bool = False) -> Path:
     if refazer and (t / "narracao.json").exists():
         # tudo nesta pasta foi gerado a partir do texto (não há bruto do aluno): pode recomeçar
         roteiro = C.ler_json(t / "motion" / "roteiro.json")
-        shutil.rmtree(t)
+        C.apagar_pasta(t)
         if roteiro:
             C.gravar_json(t / "motion" / "roteiro-anterior.json", roteiro)
     elif any(b.stem == vid for b in C.listar_brutos()):
@@ -423,7 +520,7 @@ def cmd_gerar(a) -> None:
     import numpy as np
     import soundfile as sf
 
-    texto = ler_texto(Path(a.texto_arquivo))
+    texto, capitulos = ler_roteiro(Path(a.texto_arquivo))
     modelo = a.modelo or modelo_padrao()
     t = pasta_nova(a.id, a.refazer)
     partes = pedacos(texto)
@@ -447,7 +544,11 @@ def cmd_gerar(a) -> None:
     origem = preparar_origem(t, a.formato, wav, dur)
     C.copiar(origem, t / "cortado.mp4")
     gravar_palavras(t, palavras, f"elevenlabs-tts/{modelo}")
-    (t / "roteiro-narracao.txt").write_text(texto + "\n", encoding="utf-8")
+    (t / "roteiro-narracao.txt").write_text(Path(a.texto_arquivo).read_text(encoding="utf-8").strip() + "\n",
+                                            encoding="utf-8")
+    capitulos = tempos_capitulos(capitulos, palavras)
+    if len(capitulos) > 1:
+        C.gravar_json(t / "capitulos.json", capitulos)
     C.gravar_json(t / "narracao.json", {"tipo": "ia", "voz": a.voz, "voz_nome": a.voz_nome, "modelo": modelo,
                                         "velocidade": a.velocidade, "formato": a.formato,
                                         **estimar(texto, modelo), "duracao": round(dur, 2)})
@@ -459,7 +560,8 @@ def cmd_gerar(a) -> None:
     C.marcar_etapa(t.name, "transcricao", motor=f"elevenlabs-tts/{modelo}")
     C.marcar_etapa(t.name, "corte", narrado=True)
     print(json.dumps({"id": t.name, "duracao": round(dur, 2), "palavras": len(palavras), "pedacos": len(partes),
-                      "caracteres": len(texto), "audio": str(wav)}, ensure_ascii=False))
+                      "caracteres": len(texto), "capitulos": len(capitulos) if len(capitulos) > 1 else 0,
+                      "audio": str(wav)}, ensure_ascii=False))
 
 
 def cmd_audio(a) -> None:
@@ -638,6 +740,15 @@ def _deslocar(eventos: list[dict], mapear) -> list[dict]:
     return out
 
 
+def _momentos(c: dict) -> list[dict]:
+    """Todos os objetos com "em" dentro dos campos de um card (itens, passos, lados, barras…)."""
+    out = [c]
+    for v in c.values():
+        if isinstance(v, list):
+            out += [m for it in v if isinstance(it, dict) for m in _momentos(it)]
+    return out
+
+
 def montar_sobre(t: Path, base: Path, pal_base: list[dict], falas: list[dict], ganho: float,
                  voz_inteira_trocada: bool, avisos: list[str], ganho_no_video_todo: bool = False) -> dict:
     import numpy as np
@@ -779,8 +890,7 @@ def montar_sobre(t: Path, base: Path, pal_base: list[dict], falas: list[dict], g
         for card in roteiro.get("cards", []):
             card["inicio"], card["fim"] = round(mapear(card["inicio"]), 3), round(mapear(card["fim"]), 3)
             c = card.get("campos") or {}
-            alvos = [c] + [it for lista in ("itens", "passos") for it in (c.get(lista) or []) if isinstance(it, dict)]
-            for obj in alvos:
+            for obj in _momentos(c):
                 if obj.get("em") is not None:
                     obj["em"] = round(mapear(obj["em"]), 3)
         C.gravar_json(t / "motion" / "roteiro.json", roteiro)
@@ -881,6 +991,8 @@ def cmd_layout(a) -> None:
     pasta.mkdir(exist_ok=True)
     fundo = t / f"fundo_{a.formato}.png"
     est = estilo_atual(t, a.estilo)
+    capitulos = C.ler_json(t / "capitulos.json") or []
+    por_capitulo = len(capitulos) > 1 and not a.fundo and not a.fundo_unico
     if a.fundo:
         fundo_imagem(Path(a.fundo), W, H, fundo)
     else:
@@ -888,7 +1000,16 @@ def cmd_layout(a) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         audio = Path(tmp) / "audio.wav"
         C.rodar(["ffmpeg", "-y", "-i", str(cortado), "-vn", "-ac", "2", "-ar", "48000", str(audio)])
-        montar_video(fundo, audio, pasta / "base.mp4", C.info_video(cortado)["duracao"])
+        dur = C.info_video(cortado)["duracao"]
+        if por_capitulo:
+            fundos = [(fundo, 0.0)]
+            for i, cp in enumerate(capitulos[1:], start=1):
+                img = t / f"fundo_{a.formato}_{i + 1:02d}.png"
+                gerar_fundo(W, H, est, img, variante=i)
+                fundos.append((img, cp["inicio"]))
+            montar_video_capitulos(fundos, audio, pasta / "base.mp4", dur)
+        else:
+            montar_video(fundo, audio, pasta / "base.mp4", dur)
     leg = ({"alinhamento": "baixo", "margem_v": 1920 - 1480} if a.formato == "vertical"
            else {"alinhamento": "baixo", "margem_v": int(H * 0.08)})
     layout = {"formato": a.formato, "largura": W, "altura": H, "areas": {"voce": [0, 0, W, H]}, "costura": None,
@@ -926,6 +1047,7 @@ def main() -> None:
     p = sub.add_parser("remover"); p.add_argument("id")
     p = sub.add_parser("layout"); p.add_argument("trabalho"); p.add_argument("formato", choices=["horizontal", "vertical"])
     p.add_argument("--estilo"); p.add_argument("--fundo")
+    p.add_argument("--fundo-unico", action="store_true", help="com capítulos: o mesmo fundo no vídeo todo")
     a = ap.parse_args()
     if a.cmd == "sobre" and not a.so_custo and not a.voz:
         ap.error("falta --voz")

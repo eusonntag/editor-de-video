@@ -52,6 +52,8 @@ Digite o número:
 📁 {caminho absoluto de videos/Editados/<nome>_editado.mp4}
 📁 {caminho absoluto de <nome>_editado_vertical.mp4, se houver}
 📝 Legenda separada (para subir no YouTube): {caminho do .srt, se houver}
+📑 Capítulos para colar na descrição do YouTube: {caminho do _capitulos.txt, se o finalizar devolveu "capitulos"}
+🖼️ Créditos das imagens (cole na descrição; é obrigatório nas licenças CC BY): {caminho do _creditos.txt, se o finalizar devolveu "creditos"}
 
 Duração: 3:21 (era 4:12)
 
@@ -62,5 +64,7 @@ Próximos passos:
 - /video-painel: ver a linha do tempo do vídeo
 - /video-editar: editar o próximo vídeo
 ```
+
+Com capítulos, mostre também o conteúdo do `_capitulos.txt` num bloco, pronto para copiar. Se o `finalizar` devolveu `capitulos_avisos`, explique em uma frase por que o YouTube não vai mostrar os capítulos (ex.: "um capítulo tem menos de 10 segundos") e ofereça juntar com o vizinho.
 
 Registre no `project.md`: nome final, formatos, caminhos. O `estado.json` já fica atualizado pelo editor.

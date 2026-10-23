@@ -1,0 +1,30 @@
+{
+  "tipo": "capitulo",
+  "nome": "Vinheta de capítulo",
+  "uso": "Abertura de cada capítulo de um vídeo longo: número grande e o nome do capítulo.",
+  "duracao_minima": 2.5,
+  "campos": {
+    "titulo": {
+      "obrigatorio": true,
+      "exemplo": "O erro que todo mundo comete"
+    },
+    "numero": {
+      "exemplo": 2,
+      "obs": "se faltar, sai da ordem em capitulos.json (ou da ordem dos cards de capítulo)"
+    },
+    "kicker": {
+      "padrao": "Capítulo",
+      "exemplo": "Parte"
+    },
+    "palavra": {
+      "obs": "palavra falada em que o título aparece (ou em, em segundos)"
+    }
+  },
+  "animacao": "número surge grande (do desfoque no Cinema), fio cresce, título revela palavra a palavra",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

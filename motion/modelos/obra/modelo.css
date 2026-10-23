@@ -1,0 +1,13 @@
+{{card}} .cena3d { perspective: calc(1300px * var(--k)); display: flex; align-items: center; justify-content: center; margin: calc(8px * var(--k)) auto; }
+{{card}} .quadro { position: relative; transform-style: preserve-3d; border-radius: calc(10px * var(--k)); overflow: hidden; background: #111;
+  box-shadow: 0 calc(40px * var(--k)) calc(80px * var(--k)) rgba(0,0,0,.55), 0 0 0 calc(2px * var(--k)) rgba(255,255,255,.08); }
+{{card}} .quadro img { width: 100%; height: 100%; object-fit: cover; display: block; }
+{{card}} .brilho { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.2) 50%, transparent 65%); }
+{{card}} .titulo-3d { font-size: calc(46px * var(--k)); line-height: 1.1; margin-top: calc(18px * var(--k)); text-align: center; }
+{{card}} .titulo-3d .palavra-anim { margin-right: .22em; }
+{{card}} .legenda-3d { font-size: calc(26px * var(--k)); color: var(--suave); margin-top: calc(8px * var(--k)); text-align: center; }
+{{card}} .credito { font-size: calc(15px * var(--k)); color: var(--suave); opacity: .85; margin-top: calc(10px * var(--k)); text-align: center; line-height: 1.3; }
+{{card}} .obra-lado { display: flex; align-items: center; gap: calc(36px * var(--k)); }
+{{card}} .obra-textos { flex: 1; min-width: 0; text-align: left; }
+{{card}} .obra-textos .titulo-3d, {{card}} .obra-textos .legenda-3d, {{card}} .obra-textos .credito { text-align: left; }
+{{card}} .obra-textos .titulo-3d { margin-top: 0; font-size: calc(54px * var(--k)); }

@@ -128,7 +128,33 @@ def cmd_opcoes(a) -> None:
     print(json.dumps({"galeria": str(galeria), "opcoes": [o["n"] for o in feitas]}, ensure_ascii=False))
 
 
+def registrar_foto(dados: dict, s: str, look: str, arquivo: Path) -> str:
+    """Foto própria vira um visual registrado na HeyGen (cobrado), no mesmo grupo dos outros visuais do personagem."""
+    hl, grupo = H.criar_look_foto(f"{dados.get('nome') or s} {look}", arquivo, dados.get("heygen_grupo"))
+    d = H.esperar_look(hl)
+    if d.get("status") != "completed":
+        raise SystemExit(f"✗ a HeyGen não terminou de preparar a foto (status: {d.get('status')})")
+    dados["heygen_grupo"] = grupo or d.get("group_id")
+    return hl
+
+
+def cmd_registrar(a) -> None:
+    s = slug(a.slug)
+    dados = ler(s)
+    info = (dados.get("looks") or {}).get(slug(a.look))
+    if not info:
+        raise SystemExit(f"✗ o personagem não tem o visual \"{a.look}\"")
+    if info.get("heygen_look"):
+        print(json.dumps({"look": slug(a.look), "mensagem": "já estava registrado"}, ensure_ascii=False))
+        return
+    info["heygen_look"] = registrar_foto(dados, s, slug(a.look), pasta(s) / info["imagem"])
+    gravar(s, dados)
+    print(json.dumps({"look": slug(a.look), "heygen_look": info["heygen_look"], "saldo_usd": H.saldo()}, ensure_ascii=False))
+
+
 def cmd_salvar(a) -> None:
+    from PIL import Image
+
     s = slug(a.slug)
     atual = C.ler_json(pasta(s) / "personagem.json", {}) or {}
     look = slug(a.look) if a.look else (atual.get("look_padrao") or "principal")
@@ -144,9 +170,18 @@ def cmd_salvar(a) -> None:
         origem = Path(a.arquivo)
         if not origem.exists():
             raise SystemExit(f"✗ não achei a imagem {origem}")
-        info["heygen_look"] = None  # foto própria: vai como imagem na hora do vídeo
-    C.copiar(origem, pasta(s) / f"{look}.jpg")
-    info["imagem"] = f"{look}.jpg"
+    destino = pasta(s) / f"{look}.jpg"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    with Image.open(origem) as im:
+        im.convert("RGB").save(destino, "JPEG", quality=95)
+        info["proporcao"] = info.get("proporcao") or ("16:9" if im.width > im.height else "9:16")
+    info["imagem"] = destino.name
+    if a.arquivo and not a.sem_heygen:
+        info["heygen_look"] = registrar_foto(atual, a.slug, look, destino)
+    elif a.arquivo:
+        info["heygen_look"] = None
+    elif info.get("heygen_look") and not atual.get("heygen_grupo"):
+        atual["heygen_grupo"] = H.esperar_look(info["heygen_look"]).get("group_id")
     dados = {**atual, **(C.ler_json(Path(a.dados)) if a.dados else {})}
     dados.setdefault("nome", a.slug)
     dados.setdefault("looks", {})[look] = info
@@ -215,6 +250,8 @@ def main() -> None:
     p.add_argument("--proporcao", default="16:9", choices=["16:9", "9:16", "1:1", "4:5"])
     p = sub.add_parser("salvar"); p.add_argument("slug"); g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--opcao", type=int); g.add_argument("--arquivo"); p.add_argument("--look"); p.add_argument("--dados")
+    p.add_argument("--sem-heygen", action="store_true", help="foto própria só fica salva, sem registrar na HeyGen")
+    p = sub.add_parser("registrar"); p.add_argument("slug"); p.add_argument("--look", required=True)
     p = sub.add_parser("editar"); p.add_argument("slug"); p.add_argument("--dados", required=True)
     p = sub.add_parser("apagar"); p.add_argument("slug"); p.add_argument("--look"); p.add_argument("--confirmar", action="store_true")
     a = ap.parse_args()
@@ -223,7 +260,7 @@ def main() -> None:
     elif a.acao == "mostrar":
         print(json.dumps(ler(a.slug), ensure_ascii=False, indent=2))
     else:
-        {"listar": cmd_listar, "opcoes": cmd_opcoes, "salvar": cmd_salvar, "editar": cmd_editar,
+        {"listar": cmd_listar, "opcoes": cmd_opcoes, "salvar": cmd_salvar, "registrar": cmd_registrar, "editar": cmd_editar,
          "apagar": cmd_apagar}[a.acao](a)
 
 

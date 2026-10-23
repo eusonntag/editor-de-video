@@ -76,6 +76,21 @@ Se você for escrever o roteiro:
 - Siglas e nomes estrangeiros que a voz pode errar: escreva como se fala (ex.: "chat gê pê tê").
 - Mostre o texto e pergunte `1. Aprovar o texto / 2. Quero mudar algo`.
 
+**Vídeo longo para o YouTube (3 minutos ou mais)**: divida em capítulos. Uma linha `# Título do capítulo` antes de cada parte: o título não é falado, vira capítulo do YouTube (lista pronta na entrega) e o editor renderiza capítulo por capítulo (se cair, continua de onde parou; mudar um capítulo refaz só ele).
+- Estrutura: abertura sem título (gancho nos primeiros 5 segundos + a promessa do vídeo: "no fim você vai saber…"), depois de 3 a 7 capítulos de 1 a 3 minutos cada, e um capítulo final curto com o resumo e a chamada (inscrever, comentar, próximo vídeo).
+- Cada capítulo abre com uma frase que diz o que vem nele e fecha puxando o próximo ("mas isso não resolve se…"). Um motivo para continuar assistindo a cada 30 a 60 segundos: pergunta, número, exemplo, virada.
+- Uma chamada no meio, leve, depois de entregar algo útil (não no começo).
+- Títulos de capítulo curtos (até 5 palavras), sem número na frente; cada capítulo com pelo menos 30 segundos de fala (o YouTube pede 10 s ou mais e 3 capítulos ou mais).
+- Tamanho: cerca de 900 caracteres por minuto de fala; um vídeo de 8 minutos tem uns 7.000 caracteres. Mostre o roteiro em partes se for grande, mas aprove o texto inteiro antes de gerar.
+
+```
+# O erro que todo mundo comete
+Texto falado do capítulo…
+
+# Como resolver em 3 passos
+Texto falado…
+```
+
 Defina um `<id>` curto pelo assunto (ex.: `3-erros-instagram`) e grave o texto em `videos/.trabalho/_narracao/<id>.txt` (texto puro, UTF-8). Antes de gravar, confira se o `<id>` já existe em `{PY} editor.py videos --json`; se existir, acrescente `-2`.
 
 ## 4. Formato

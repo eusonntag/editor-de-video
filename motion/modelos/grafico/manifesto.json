@@ -1,0 +1,48 @@
+{
+  "tipo": "grafico",
+  "nome": "Gráfico de barras",
+  "uso": "Comparar 2 a 5 números (preços, resultados, porcentagens). Barras crescem e os valores contam.",
+  "duracao_minima": 3.5,
+  "campos": {
+    "titulo": {
+      "exemplo": "Quanto cada canal vende"
+    },
+    "barras": {
+      "obrigatorio": true,
+      "exemplo": [
+        {
+          "rotulo": "Instagram",
+          "valor": 42,
+          "palavra": "instagram"
+        },
+        {
+          "rotulo": "YouTube",
+          "valor": 71,
+          "palavra": "youtube",
+          "destaque": true
+        }
+      ],
+      "obs": "cada barra cresce quando a palavra é falada (ou em); destaque: true pinta a barra com a cor de destaque (padrão: a maior)"
+    },
+    "prefixo": {
+      "exemplo": "R$ "
+    },
+    "sufixo": {
+      "exemplo": "%"
+    },
+    "casas": {
+      "padrao": 0,
+      "obs": "casas decimais dos valores"
+    },
+    "legenda": {
+      "exemplo": "pesquisa com 300 alunos"
+    }
+  },
+  "animacao": "barras crescem uma a uma com o valor contando; a destacada pulsa no fim",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

@@ -97,11 +97,12 @@ def corpo_bloco(vid: str, r: dict, pers: dict, bloco: dict) -> dict:
     look_nome = r.get("look") or pers.get("look_padrao")
     look = (pers.get("looks") or {}).get(look_nome) or {}
     if not look.get("heygen_look"):
-        raise SystemExit(f"✗ o visual \"{look_nome}\" do personagem não está registrado na HeyGen")
+        raise SystemExit(f"✗ o visual \"{look_nome}\" do personagem não está registrado na HeyGen "
+                         f"(registre com: personagens registrar {r['personagem']} --look {look_nome})")
     corpo = {"type": "avatar", "avatar_id": look["heygen_look"], "title": f"{vid} bloco {bloco['n']}",
              "aspect_ratio": r.get("proporcao") or look.get("proporcao") or "16:9", "resolution": "1080p",
              "expressiveness": pers.get("expressividade") or "low"}
-    gestos = bloco.get("gestos") or pers.get("gestos")
+    gestos = bloco.get("gestos") or look.get("gestos") or pers.get("gestos")
     if gestos:
         corpo["motion_prompt"] = gestos
     voz = r.get("voz") or pers.get("voz") or {}

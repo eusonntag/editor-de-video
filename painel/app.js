@@ -12,7 +12,7 @@ const ABAS = [["cortes", "Cortes"], ["motion", "Motion"], ["legendas", "Legendas
 const NOME_ETAPA = { transcricao: "Transcrição", corte: "Corte", layout: "Formato e zoom", motion: "Motion", legenda: "Legenda", final: "Finalização" };
 const NOME_FORMATO = { horizontal: "Horizontal", vertical: "Vertical", react: "React" };
 const NOME_ESTILO_EDICAO = { natural: "natural", dinamica: "dinâmica", acelerada: "acelerada" };
-const TIPO_CARD = { apresentacao: "Apresentação", titulo: "Título", lista: "Lista", numero: "Número", destaque: "Destaque", passos: "Passos", palavra: "Palavra", "chamada-final": "Chamada final", personalizado: "Personalizado" };
+const TIPO_CARD = { apresentacao: "Apresentação", titulo: "Título", lista: "Lista", numero: "Número", destaque: "Destaque", passos: "Passos", palavra: "Palavra", "chamada-final": "Chamada final", pontilhismo: "Pontilhismo", capitulo: "Capítulo", comparacao: "Comparação", grafico: "Gráfico", obra: "Obra 3D", galeria: "Galeria 3D", "linha-do-tempo": "Linha do tempo", orbita: "Órbita", personalizado: "Personalizado" };
 const ESTILOS_LEGENDA = [["dinamica", "Dinâmica", "poucas palavras, a falada em destaque"], ["classica", "Clássica", "frase inteira, discreta"], ["caixa", "Caixa", "palavras numa tarja"], ["palavra", "Palavra", "uma por vez, grande"]];
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -937,9 +937,17 @@ function camposEditaveis(c) {
   for (const [n, v] of Object.entries(k)) {
     if (ignorar.has(n) && !(n === "palavra" && c.tipo === "palavra")) continue;
     if (typeof v === "string" || typeof v === "number") out.push([n, String(v)]);
-    else if (Array.isArray(v)) v.forEach((it, i) => { if (it && typeof it === "object" && "texto" in it) out.push([`${n}.${i}.texto`, it.texto]); });
+    else if (Array.isArray(v)) textosDaLista(v, n, out);
   }
   return out;
+}
+// listas dentro de listas (lados da comparação, barras do gráfico): caminho "lados.0.itens.1.texto"
+function textosDaLista(lista, caminho, out) {
+  lista.forEach((it, i) => {
+    if (!it || typeof it !== "object") return;
+    for (const campo of ["rotulo", "texto"]) if (typeof it[campo] === "string") out.push([`${caminho}.${i}.${campo}`, it[campo]]);
+    for (const [n, v] of Object.entries(it)) if (Array.isArray(v)) textosDaLista(v, `${caminho}.${i}.${n}`, out);
+  });
 }
 function montarMotion() {
   const D = S.dados;

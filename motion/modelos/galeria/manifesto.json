@@ -1,0 +1,34 @@
+{
+  "tipo": "galeria",
+  "nome": "Galeria 3D (carrossel)",
+  "uso": "2 a 6 imagens ou textos em carrossel 3D; cada um vem para a frente quando é falado.",
+  "duracao_minima": 4.0,
+  "campos": {
+    "titulo": {
+      "exemplo": "3 obras que mudaram tudo"
+    },
+    "itens": {
+      "obrigatorio": true,
+      "exemplo": [
+        {
+          "imagem": "motion/imagens/mona-lisa.jpg",
+          "rotulo": "Mona Lisa",
+          "palavra": "Mona"
+        },
+        {
+          "texto": "Ideia 2",
+          "rotulo": "sem imagem vira um cartão de texto",
+          "palavra": "segunda"
+        }
+      ],
+      "obs": "cada item: imagem (caminho dentro da pasta do vídeo (motion/imagens/x.jpg): foto do aluno, imagem que ele enviou ou do Wikimedia Commons (editor.py imagens buscar/usar). O crédito do Commons aparece sozinho) ou texto; rotulo embaixo; palavra/em = quando vem para a frente"
+    }
+  },
+  "animacao": "carrossel em perspectiva: o item da vez fica no centro e de frente, os outros recuam inclinados",
+  "campos_comuns": {
+    "icone": "nome de ícone Phosphor (use: editor.py icones buscar \"termos\")",
+    "emoji": "emoji usado quando o estilo de ícone é emoji",
+    "lado": "auto (padrão), esquerda ou direita (horizontal)",
+    "inicio/fim": "segundos no vídeo cortado (palavras.json)"
+  }
+}

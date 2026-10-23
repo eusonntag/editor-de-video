@@ -1,0 +1,22 @@
+{{card}} .titulo-cmp { font-size: calc(40px * var(--k)); line-height: 1.12; margin-bottom: calc(24px * var(--k)); }
+{{card}} .lados { display: flex; align-items: stretch; gap: calc(26px * var(--k)); text-align: left; }
+{{card}} .lado { flex: 1; min-width: 0; padding: calc(24px * var(--k)) calc(26px * var(--k)); border-radius: calc(18px * var(--k));
+  background: var(--caixinha); }
+{{card}} .lado.dir { background: color-mix(in srgb, var(--destaque) 16%, transparent);
+  box-shadow: inset 0 0 0 calc(2px * var(--k)) color-mix(in srgb, var(--destaque) 55%, transparent); }
+{{card}} .divisoria { width: calc(3px * var(--k)); border-radius: 999px; background: color-mix(in srgb, var(--texto) 22%, transparent); flex: none; }
+{{card}} .rotulo-lado { font-family: var(--fonte-texto); font-weight: 700; font-size: calc(24px * var(--k)); letter-spacing: var(--kicker-espaco);
+  text-transform: var(--kicker-caixa); color: var(--suave); margin-bottom: calc(16px * var(--k)); }
+{{card}} .lado.dir .rotulo-lado { color: var(--destaque); }
+{{card}} .itens-cmp { display: flex; flex-direction: column; gap: calc(16px * var(--k)); }
+{{card}} .item-cmp { display: flex; align-items: flex-start; gap: calc(12px * var(--k)); font-size: calc(34px * var(--k)); font-weight: 700; line-height: 1.15; }
+{{card}} .lado.esq .item-cmp { color: color-mix(in srgb, var(--texto) 72%, transparent); }
+{{card}} .marca-cmp { width: calc(36px * var(--k)); height: calc(36px * var(--k)); flex: none; margin-top: calc(2px * var(--k)); }
+{{card}} .marca-cmp path { fill: none; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+{{card}} .lado.esq .marca-cmp path { stroke: var(--suave); }
+{{card}} .lado.dir .marca-cmp path { stroke: var(--destaque); }
+{{card}}.em-pe .lados { flex-direction: column; }
+{{card}}.em-pe .divisoria { width: auto; height: calc(3px * var(--k)); }
+{{card}}.compacto .item-cmp { font-size: calc(28px * var(--k)); }
+{{card}}.compacto .lado { padding: calc(16px * var(--k)) calc(18px * var(--k)); }
+{{card}} .titulo-cmp .palavra-anim { margin-right: .22em; }

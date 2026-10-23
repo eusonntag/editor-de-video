@@ -32,9 +32,10 @@ Formato, motion e legenda
   conferir-layout <id> <formato>
   baixar-referencia <url> [--nome arquivo]
   icones buscar "termos" | icones indexar
+  imagens buscar <id> "termos em inglês" [--n 8] | imagens usar <id> <número> [--nome x] | imagens creditos <id>
   motion <id> montar|previa|galeria|render|validar --formato F [--estilo X] [--icones Y] [--tipo estilos|icones]
   legendar <id> --formato F [--estilo X] [--cor #hex] [--margem-v N] [--tamanho px]
-  galeria-legendas <id> --formato F [--variar estilo|fonte|tamanho|cor|contorno|palavras|maiusculas|posicao|atual]
+  galeria-legendas <id> --formato F [--variar estilo|fonte|tamanho|cor|contorno|destaque|leitura|palavras|maiusculas|posicao|atual]
   legenda-config [--video <id>] [--definir k=v …] [--limpar k,k|tudo] [--json]
 Entrega
   finalizar <id> --nome N [--formatos a,b] [--substituir | --nova-versao]
@@ -352,7 +353,10 @@ def cmd_cortar(a) -> None:
     exigir(render, "instalação (video-use)")
     script = str(render.relative_to(C.RAIZ))
     pasta_trechos = t / "edit" / ("clips_draft" if a.rascunho else "clips_graded")
-    shutil.rmtree(pasta_trechos, ignore_errors=True)  # trechos de um EDL antigo atrapalham a contagem
+    try:
+        C.apagar_pasta(pasta_trechos)  # trechos de um EDL antigo atrapalham a contagem
+    except OSError:
+        pass
     if a.rascunho:
         destino = t / "rascunho.mp4"
         C.rodar_script(script, str(edl), "-o", str(destino), "--draft", "--no-subtitles", quieto=True)
@@ -678,6 +682,8 @@ def cmd_motion(a) -> None:
         args += ["--icones", a.icones]
     if a.tipo:
         args += ["--tipo", a.tipo]
+    if a.capitulo:
+        args += ["--capitulo", str(a.capitulo)]
     if a.acao in ("montar", "previa", "galeria", "render"):
         exigir(t / a.formato / "layout.json", f"layout {a.formato}")
     rodar_script("motion.py", *args)
@@ -772,8 +778,9 @@ def _valor_legenda(chave: str, bruto: str):
         v = json.loads(bruto)
     except json.JSONDecodeError:
         v = bruto
-    escolhas = {"estilo": list(L.ESTILOS), "fonte": list(L.FONTES_LEGENDA), "contorno": ["sem", "fino", "normal", "grosso"],
-                "fundo": ["nenhum", "tarja", "translucido"], "animacao": ["pop", "nenhuma"], "posicao": ["baixo", "centro"]}
+    escolhas = {"estilo": list(L.ESTILOS), "fonte": list(L.FONTES_LEGENDA), "contorno": ["sem", "fino", "normal", "grosso", "brilho"],
+                "fundo": ["nenhum", "tarja", "translucido", "sombreado"], "animacao": ["pop", "nenhuma"],
+                "posicao": ["baixo", "centro"], "sombra": ["auto", "forte"], "destaque_tipo": ["cor", "caixa", "maior"]}
     if v is None:
         return None
     if chave in escolhas:
@@ -913,14 +920,76 @@ def cmd_finalizar(a) -> None:
     if (t / "narracao.wav").exists() and ((narr and narr.get("tipo") == "ia") or (t / "narracao_extra.json").exists()):
         mp3 = C.EDITADOS / f"{nome}_narracao.mp3"
         C.rodar(["ffmpeg", "-y", "-i", str(t / "narracao.wav"), "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)])
+    caps = exportar_capitulos(t, nome, ref)
+    caps.update(exportar_creditos(t, nome))
     e = C.ler_estado(vid)
     e["nome_final"] = nome
     e.setdefault("arquivos_finais", {}).update(finais)
     if mp3:
         e["narracao_mp3"] = str(mp3)
     C.salvar_estado(vid, e)
-    print(json.dumps({"nome": nome, "arquivos": finais, **({"narracao": str(mp3)} if mp3 else {}),
+    print(json.dumps({"nome": nome, "arquivos": finais, **({"narracao": str(mp3)} if mp3 else {}), **caps,
                       "verificacao": relatorio}, indent=1, ensure_ascii=False))
+
+
+def exportar_creditos(t: Path, nome: str) -> dict:
+    """Imagens do Wikimedia Commons usadas nos cards ativos → <nome>_creditos.txt (para a descrição do vídeo).
+    CC BY e CC BY-SA exigem o crédito; domínio público entra também, por cortesia."""
+    sys.path.insert(0, str(C.RAIZ / "scripts"))
+    from imagens import credito_texto, ler_creditos
+
+    creditos = ler_creditos(t)
+    if not creditos:
+        return {}
+    usadas: list[str] = []
+
+    def achar(v) -> None:
+        if isinstance(v, dict):
+            if isinstance(v.get("imagem"), str):
+                usadas.append(Path(v["imagem"]).name)
+            for x in v.values():
+                achar(x)
+        elif isinstance(v, list):
+            for x in v:
+                achar(x)
+
+    roteiro = C.ler_json(t / "motion" / "roteiro.json") or {}
+    for card in roteiro.get("cards", []):
+        if card.get("ativo", True):
+            achar(card.get("campos") or {})
+    linhas = [f"- {Path(creditos[a]['titulo']).stem}: {credito_texto(creditos[a])} ({creditos[a].get('pagina', '')})"
+              for a in dict.fromkeys(usadas) if a in creditos]
+    if not linhas:
+        return {}
+    arq = C.EDITADOS / f"{nome}_creditos.txt"
+    arq.write_text("Imagens:\n" + "\n".join(linhas) + "\n", encoding="utf-8")
+    return {"creditos": str(arq)}
+
+
+def exportar_capitulos(t: Path, nome: str, dur: float | None) -> dict:
+    """capitulos.json → <nome>_capitulos.txt, no formato da descrição do YouTube ("0:00 Título").
+    O YouTube só mostra os capítulos com 3 ou mais, o primeiro em 0:00 e todos com pelo menos 10 s."""
+    caps = C.ler_json(t / "capitulos.json") or []
+    if not caps:
+        return {}
+    longo = (dur or caps[-1]["inicio"]) >= 3600
+
+    def tempo(s: float) -> str:
+        s = int(s)
+        return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}" if longo else f"{s // 60}:{s % 60:02d}"
+
+    fins = [c["inicio"] for c in caps[1:]] + [dur or caps[-1]["inicio"] + 10]
+    problemas = []
+    if len(caps) < 3:
+        problemas.append("o YouTube pede pelo menos 3 capítulos")
+    if caps[0]["inicio"] > 0:
+        problemas.append("o primeiro capítulo precisa começar em 0:00")
+    curtos = [c["titulo"] for c, f in zip(caps, fins) if f - c["inicio"] < 10]
+    if curtos:
+        problemas.append("capítulo com menos de 10 segundos: " + ", ".join(curtos))
+    arq = C.EDITADOS / f"{nome}_capitulos.txt"
+    arq.write_text("\n".join(f"{tempo(c['inicio'])} {c['titulo']}" for c in caps) + "\n", encoding="utf-8")
+    return {"capitulos": str(arq), **({"capitulos_avisos": problemas} if problemas else {})}
 
 
 def cmd_painel(a) -> None:
@@ -996,7 +1065,7 @@ def cmd_liberar_espaco(a) -> None:
     for p, _ in alvos:
         if p.resolve().parent != C.TRABALHO.resolve():
             continue  # segurança: só apaga dentro de videos/.trabalho
-        shutil.rmtree(p)
+        C.apagar_pasta(p)
     print(f"✅ {round(total / 1e6, 1)} MB liberados ({len(alvos)} vídeos prontos). Os vídeos em Editados e os brutos não foram tocados.")
 
 
@@ -1092,6 +1161,9 @@ def main() -> None:
     if argv[0] == "icones":
         rodar_script("icones.py", *argv[1:])
         return
+    if argv[0] == "imagens":
+        rodar_script("imagens.py", *argv[1:])
+        return
 
     ap = argparse.ArgumentParser(prog="editor.py", add_help=True)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1122,12 +1194,13 @@ def main() -> None:
     p = sub.add_parser("baixar-referencia"); p.add_argument("url"); p.add_argument("--nome")
     p = sub.add_parser("motion"); p.add_argument("id"); p.add_argument("acao", choices=["montar", "previa", "galeria", "render", "validar"])
     p.add_argument("--formato", default="horizontal", choices=["horizontal", "vertical", "react"]); p.add_argument("--estilo")
-    p.add_argument("--icones"); p.add_argument("--tipo", choices=["estilos", "icones"])
+    p.add_argument("--icones"); p.add_argument("--tipo", choices=["estilos", "icones"]); p.add_argument("--capitulo", type=int)
     p = sub.add_parser("legendar"); p.add_argument("id"); p.add_argument("--formato", default="horizontal", choices=["horizontal", "vertical", "react"])
     p.add_argument("--estilo", choices=["dinamica", "classica", "caixa", "palavra"]); p.add_argument("--cor"); p.add_argument("--margem-v", type=int)
     p.add_argument("--tamanho", type=int, help="tamanho da letra em px (padrão: 4,2%% da altura no vertical, 6,2%% no horizontal)")
     p = sub.add_parser("galeria-legendas"); p.add_argument("id"); p.add_argument("--formato", default="horizontal", choices=["horizontal", "vertical", "react"])
-    p.add_argument("--variar", choices=["estilo", "fonte", "tamanho", "cor", "contorno", "palavras", "maiusculas", "posicao", "atual"])
+    p.add_argument("--variar", choices=["estilo", "fonte", "tamanho", "cor", "contorno", "destaque", "leitura", "palavras",
+                                       "maiusculas", "posicao", "atual"])
     p = sub.add_parser("legenda-config"); p.add_argument("--video"); p.add_argument("--definir", nargs="*")
     p.add_argument("--limpar", help="opções separadas por vírgula, ou 'tudo'"); p.add_argument("--json", action="store_true")
     p = sub.add_parser("finalizar"); p.add_argument("id"); p.add_argument("--nome", required=True); p.add_argument("--formatos")
@@ -1139,7 +1212,7 @@ def main() -> None:
     sub.add_parser("exemplo")
     p = sub.add_parser("narrar"); p.add_argument("acao", choices=["vozes", "biblioteca", "adicionar", "amostras", "custo", "gerar", "audio", "sobre", "remover"])
     p = sub.add_parser("musica"); p.add_argument("acao", choices=["amostras", "gerar", "usar", "config", "previa"]); p.add_argument("id")
-    p = sub.add_parser("personagens"); p.add_argument("acao", choices=["saldo", "listar", "mostrar", "opcoes", "salvar", "editar", "apagar"])
+    p = sub.add_parser("personagens"); p.add_argument("acao", choices=["saldo", "listar", "mostrar", "opcoes", "salvar", "registrar", "editar", "apagar"])
     p = sub.add_parser("avatar"); p.add_argument("acao", choices=["vozes", "amostras", "custo", "gerar", "juntar"])
     p = sub.add_parser("chave"); p.add_argument("acao", choices=["gravar", "testar", "motor"])
     p.add_argument("servico", nargs="?", choices=["groq", "elevenlabs", "heygen", "whisper", "scribe"]); p.add_argument("valor", nargs="?")

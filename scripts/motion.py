@@ -19,6 +19,7 @@ em que ela é falada (primeira ocorrência dentro do card); "em" força o segund
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -31,14 +32,14 @@ import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from comum import FONTES, RAIZ, bin_hyperframes, info_video, ler_marca  # noqa: E402
+from comum import FONTES, RAIZ, apagar_pasta, bin_hyperframes, info_video, ler_marca  # noqa: E402
 
 MOTION = RAIZ / "motion"
 MODELOS = MOTION / "modelos"
 ESTILOS = MOTION / "estilos"
 GSAP = RAIZ / "node_modules" / "gsap" / "dist" / "gsap.min.js"
 TIPOS = ["apresentacao", "titulo", "lista", "numero", "destaque", "passos", "palavra", "chamada-final", "pontilhismo",
-         "personalizado"]
+         "capitulo", "comparacao", "grafico", "obra", "galeria", "linha-do-tempo", "orbita", "personalizado"]
 ORDEM_ESTILOS = ["escuro", "claro", "pop", "editorial", "cinema"]
 ESTILOS_ICONE = ["linha", "preenchido", "duotone", "emoji", "nenhum"]
 ACAO_ICONE = {"seguir": ("user-plus", "➕"), "comentar": ("chat-circle-dots", "💬"),
@@ -146,11 +147,34 @@ def resolver_sincronia(card: dict, palavras: list[dict], avisos: list[str]) -> N
                 obj["em"] = t
 
     resolver(c, "falada" if card["tipo"] == "palavra" else "palavra", "card")
-    for lista in ("itens", "passos", "etapas"):
-        for i, it in enumerate(c.get(lista) or []):
-            if isinstance(it, str):
-                c[lista][i] = it = {"texto": it}
-            resolver(it, "palavra", f"{lista} {i + 1}")
+
+    def descer(obj, nome: str) -> None:  # listas dentro de listas (lados da comparação, barras do gráfico…)
+        for chave, v in list(obj.items()):
+            if not isinstance(v, list):
+                continue
+            for i, it in enumerate(v):
+                if isinstance(it, str) and chave in LISTAS_TEXTO:
+                    v[i] = it = {"texto": it}
+                if isinstance(it, dict):
+                    rotulo = f"{nome}{chave} {i + 1}"
+                    resolver(it, "palavra", rotulo)
+                    descer(it, rotulo + " → ")
+
+    descer(c, "")
+
+
+LISTAS_TEXTO = ("itens", "passos", "etapas")  # listas em que um texto solto vira {"texto": ...}
+
+
+def momentos(c: dict) -> list[dict]:
+    """Todos os objetos com "em" dentro dos campos de um card (para deslocar quando o vídeo muda)."""
+    out = [c]
+    for v in c.values():
+        if isinstance(v, list):
+            for it in v:
+                if isinstance(it, dict):
+                    out += momentos(it)
+    return out
 
 
 def validar(roteiro: dict, palavras: list[dict], duracao: float) -> list[str]:
@@ -184,7 +208,9 @@ def tempo_cheio(card: dict) -> float:
     t0 = c["em"] if c.get("em") is not None else a
     # quanto cada modelo leva para terminar de montar depois do disparo
     extra = {"apresentacao": 2.0, "titulo": 0.7, "numero": 1.4, "destaque": 1.0, "palavra": 1.1,
-             "chamada-final": 1.2, "lista": 0.9, "passos": 0.9, "pontilhismo": 2.0, "personalizado": 1.2}.get(card["tipo"], 1.0)
+             "chamada-final": 1.2, "lista": 0.9, "passos": 0.9, "pontilhismo": 2.0, "personalizado": 1.2,
+             "capitulo": 1.2, "comparacao": 99, "grafico": 99, "obra": 2.0, "galeria": 99, "linha-do-tempo": 99,
+             "orbita": 99}.get(card["tipo"], 1.0)  # 99: só fica completo no fim
     if card["tipo"] == "pontilhismo":  # a prévia mostra o 1º desenho já formado
         t1 = tempos_etapas(card)
         if not t1:
@@ -192,13 +218,12 @@ def tempo_cheio(card: dict) -> float:
         fim = t1[1] - 0.05 if len(t1) > 1 else card["fim"] - 0.35
         return round(min(t1[0] + PT_MORFE + 0.6, fim), 3)
     ts = [t0 + extra, a + 1.0]
-    for lista in ("itens", "passos"):
-        for it in c.get(lista) or []:
-            if isinstance(it, dict) and it.get("em") is not None:
-                ts.append(it["em"] + 0.7)
-    if card["tipo"] in ("titulo", "destaque"):
+    for it in momentos(c)[1:]:
+        if it.get("em") is not None:
+            ts.append(it["em"] + 0.7)
+    if card["tipo"] in ("titulo", "destaque", "capitulo"):
         n = len(str(c.get("titulo") or c.get("frase") or "").split())
-        ts.append(t0 + 0.4 + n * 0.09 + 0.6)
+        ts.append(t0 + 0.4 + n * 0.09 + 0.6 + (0.55 if card["tipo"] == "capitulo" else 0))
     return round(min(max(ts), card["fim"] - 0.35), 3)
 
 
@@ -247,7 +272,8 @@ def zona_card(card: dict, layout: dict, ocupacao: list[tuple]) -> dict:
             m, topo = 70, 200
             w, k = W - 2 * m, 1.75
         else:
-            m, topo = int(W * 0.2), int(H * 0.1)
+            # comparação e gráfico têm duas colunas: ganham mais largura
+            m, topo = int(W * (0.1 if card["tipo"] in LARGOS else 0.2)), int(H * 0.1)
             w, k = W - 2 * m, 1.6 * W / 1920
         base = leg[1] - 30
         dy = int(ajuste.get("dy", 0))
@@ -291,7 +317,9 @@ def zona_card(card: dict, layout: dict, ocupacao: list[tuple]) -> dict:
 # -------------------------------------------------------------- modelos ----
 
 def _chars(texto: str) -> str:
-    return "".join(f'<span class="char">{e(ch) if ch != " " else "&nbsp;"}</span>' for ch in texto)
+    # letra a letra, mas cada palavra fica inteira na linha (nome longo quebra no espaço, não no meio)
+    palavras = ("".join(f'<span class="char">{e(ch)}</span>' for ch in p) for p in texto.split(" "))
+    return " ".join(f'<span style="white-space:nowrap">{p}</span>' for p in palavras)
 
 
 def _palavras(texto: str, destaque: str | None = None) -> str:
@@ -312,6 +340,8 @@ def _palavras(texto: str, destaque: str | None = None) -> str:
 
 
 CHECK_SVG = '<svg viewBox="0 0 40 40"><path d="M8 21 L17 30 L33 11" /></svg>'
+LARGOS = ("comparacao", "grafico", "galeria", "linha-do-tempo", "orbita")  # no narrado deitado: 80% da largura (os outros, 60%)
+X_SVG = '<svg viewBox="0 0 40 40"><path d="M11 11 L29 29 M29 11 L11 29" /></svg>'
 
 
 def revelar(alvo: str, t0: str, stagger: float, y: float, dur: float = .4) -> str:
@@ -698,9 +728,265 @@ desenhar(A);
 tl.to(o, {{t: B, duration: B - A, ease: "none", onUpdate: function () {{ desenhar(o.t); }}}}, A);""")
         return h, j
 
+    if tipo == "capitulo":
+        n = c.get("numero") or card.get("_numero") or 1
+        h = (cab(kicker or "Capítulo") + f'<div class="num-cap titulo-fonte">{int(n):02d}</div><div class="fio-cap"></div>'
+             f'<div class="titulo titulo-fonte">{_palavras(c.get("titulo", ""), c.get("destaque"))}</div>')
+        j = f"""
+const t0 = {js(c.get("em"))} !== null ? Math.max(A + .05, {js(c.get("em"))} - .25) : A + .15;
+tl.from(sel(".cabeca"), {{opacity: 0, y: -10 * K, duration: .4, ease: ENT}}, t0);
+if (REVELAR === "desfoque") tl.fromTo(sel(".num-cap"), {{opacity: 0, filter: "blur(18px)", scale: 1.08}}, {{opacity: 1, filter: "blur(0px)", scale: 1, duration: .9, ease: "power3.out"}}, t0);
+else tl.from(sel(".num-cap"), {{opacity: 0, scale: .5, duration: .6, ease: MOLA}}, t0);
+tl.fromTo(sel(".fio-cap"), {{width: 0}}, {{width: 160 * K, duration: .6, ease: "power3.out"}}, t0 + .35);
+{revelar(".titulo .palavra-anim", "t0 + .55", .09, 26, .45)}"""
+        return h, j
+
+    if tipo == "comparacao":
+        lados = (c.get("lados") or [])[:2]
+        while len(lados) < 2:
+            lados.append({"rotulo": "", "itens": []})
+        certo_errado = c.get("modo") == "errado-certo"
+        dur = card["fim"] - card["inicio"]
+        t_lado = [lados[0].get("em") if lados[0].get("em") is not None else card["inicio"] + .3,
+                  lados[1].get("em") if lados[1].get("em") is not None else card["inicio"] + dur * .5]
+        t_itens, partes = [], []
+        for s, (lado, classe) in enumerate(zip(lados, ("esq", "dir"))):
+            itens = [it if isinstance(it, dict) else {"texto": it} for it in lado.get("itens") or []]
+            fim_lado = (t_lado[1] if s == 0 else card["fim"] - .4) - .2
+            passo = max(.35, (fim_lado - t_lado[s] - .4) / max(1, len(itens)))
+            t_itens.append([it.get("em") if it.get("em") is not None else t_lado[s] + .4 + n * passo
+                            for n, it in enumerate(itens)])
+            marca_svg = (X_SVG if s == 0 else CHECK_SVG) if certo_errado else ""
+            partes.append(
+                f'<div class="lado {classe}" id="{card["id"]}-l{s + 1}">'
+                + (f'<div class="rotulo-lado">{e(lado.get("rotulo", ""))}</div>' if lado.get("rotulo") else "")
+                + '<div class="itens-cmp">' + "".join(
+                    f'<div class="item-cmp" id="{card["id"]}-l{s + 1}-i{n}">'
+                    + (f'<span class="marca-cmp">{marca_svg}</span>' if marca_svg else "") + f'<span>{e(it.get("texto", ""))}</span></div>'
+                    for n, it in enumerate(itens, start=1)) + "</div></div>")
+        h = ((f'<div class="titulo-cmp titulo-fonte">{_palavras(c["titulo"], c.get("destaque"))}</div>' if c.get("titulo") else "")
+             + f'<div class="lados">{partes[0]}<div class="divisoria"></div>{partes[1]}</div>')
+        j = (revelar(".titulo-cmp .palavra-anim", "A + .1", .07, 18, .4) + f"""
+const TL = {js(t_lado)}, TI = {js(t_itens)};
+TL.forEach(function (t, s) {{
+  const lado = "#" + I + "-l" + (s + 1);
+  tl.fromTo(lado, {{opacity: 0, y: 24 * K}}, {{opacity: 1, y: 0, duration: .5, ease: ENT}}, t);
+  TI[s].forEach(function (ti, n) {{
+    tl.fromTo(lado + "-i" + (n + 1), {{opacity: 0, x: (s ? 24 : -24) * K}}, {{opacity: 1, x: 0, duration: .4, ease: ENT}}, ti);
+  }});
+}});
+tl.fromTo(sel(".divisoria"), {{opacity: 0}}, {{opacity: 1, duration: .4, ease: "power1.out"}}, TL[1] - .3);
+tl.to("#" + I + "-l2", {{scale: 1.03, duration: .2, yoyo: true, repeat: 1, ease: "power1.inOut"}}, TL[1] + .55);""")
+        return h, j
+
+    if tipo == "grafico":
+        barras = [b for b in (c.get("barras") or []) if isinstance(b, dict)][:6]
+        casas = int(c.get("casas", 0))
+        vmax = max([float(b.get("valor", 0)) for b in barras] + [1e-9])
+        marcadas = [n for n, b in enumerate(barras) if b.get("destaque")]
+        if not marcadas and barras:
+            marcadas = [max(range(len(barras)), key=lambda n: float(barras[n].get("valor", 0)))]
+        passo = max(.45, (card["fim"] - card["inicio"] - 1.6) / max(1, len(barras)))
+        tempos = [b.get("em") if b.get("em") is not None else card["inicio"] + .5 + n * passo for n, b in enumerate(barras)]
+        pre, suf = e(c.get("prefixo", "")), e(c.get("sufixo", ""))
+        linhas = "".join(
+            f'<div class="barra-linha{" forte" if n in marcadas else ""}" id="{card["id"]}-b{n + 1}">'
+            f'<div class="rotulo-barra">{e(b.get("rotulo", ""))}</div><div class="trilho-barra"><div class="enche-barra"></div></div>'
+            f'<div class="valor-barra">{pre}<span class="v">{e(_fmt_num(0, casas))}</span>{suf}</div></div>'
+            for n, b in enumerate(barras))
+        h = ((f'<div class="titulo-graf titulo-fonte">{_palavras(c["titulo"], c.get("destaque"))}</div>' if c.get("titulo") else "")
+             + f'<div class="barras">{linhas}</div>'
+             + (f'<div class="legenda-graf">{e(c["legenda"])}</div>' if c.get("legenda") else ""))
+        valores = [float(b.get("valor", 0)) for b in barras]
+        pcts = [round(max(3.0, v / vmax * 100), 2) for v in valores]
+        j = (revelar(".titulo-graf .palavra-anim", "A + .1", .07, 18, .4) + f"""
+const TB = {js(tempos)}, VB = {js(valores)}, PB = {js(pcts)};
+const fmtB = function (v) {{ return v.toLocaleString("pt-BR", {{minimumFractionDigits: {casas}, maximumFractionDigits: {casas}}}); }};
+TB.forEach(function (t, n) {{
+  const r = "#" + I + "-b" + (n + 1), el = document.querySelector(r + " .v"), o = {{v: 0}};
+  tl.fromTo(r, {{opacity: 0, x: -20 * K}}, {{opacity: 1, x: 0, duration: .35, ease: ENT}}, t - .15);
+  tl.fromTo(r + " .enche-barra", {{width: "0%"}}, {{width: PB[n] + "%", duration: .9, ease: "power2.out"}}, t);
+  tl.to(o, {{v: VB[n], duration: .9, ease: "power2.out", onUpdate: function () {{ el.textContent = fmtB(o.v); }}}}, t);
+  tl.set(el, {{textContent: fmtB(VB[n])}}, t + .91);
+}});
+tl.from(sel(".legenda-graf"), {{opacity: 0, duration: .4, ease: "power1.out"}}, TB[TB.length - 1] + .6);""")
+        return h, j
+
+    if tipo in TIPOS_3D:
+        return modelo_3d(card, c, zona, cab(kicker) if kicker else "")
+
     if tipo == "personalizado":
         return c.get("html", ""), c.get("js", "")
     raise SystemExit(f"tipo desconhecido: {tipo}")
+
+
+# ------------------------------------------------------------- cards 3D ----
+# 3D "falso": perspectiva do CSS + transformações calculadas a cada quadro a partir do tempo da timeline
+# (uma função desenhar(t) chamada por um tween que cobre o card inteiro, como no pontilhismo). Nada de WebGL:
+# o render continua leve e a mesma cena sai igual em qualquer quadro.
+
+TIPOS_3D = ("obra", "galeria", "linha-do-tempo", "orbita")
+
+JS_SUAVE = "const suave = function (p) { p = Math.min(1, Math.max(0, p)); return p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; };"
+JS_POSICAO = """
+const posicao = function (t) {  // 0 = primeiro item em foco; cada troca leva .8 s e começa .35 s antes da palavra
+  let a = 0;
+  for (let k = 1; k < T.length; k++) a += suave((t - T[k] + .35) / .8);
+  return a;
+};"""
+JS_RODAR = """
+const o = {t: A};
+desenhar(A);
+tl.to(o, {t: B, duration: B - A, ease: "none", onUpdate: function () { desenhar(o.t); }}, A);"""
+
+
+def _tempos_itens(card: dict, itens: list[dict], inicio_extra: float = .2, folga_fim: float = 1.0) -> list[float]:
+    passo = max(.8, (card["fim"] - card["inicio"] - inicio_extra - folga_fim) / max(1, len(itens)))
+    return [round(it["em"] if it.get("em") is not None else card["inicio"] + inicio_extra + n * passo, 3)
+            for n, it in enumerate(itens)]
+
+
+def modelo_3d(card: dict, c: dict, zona: dict, cabeca: str) -> tuple[str, str]:
+    tipo, k = card["tipo"], zona["k"]
+    largura = zona["w"] - 2 * 44 * k
+    em_pe = ((zona["faixa"][1] - zona["faixa"][0]) if zona.get("faixa") else zona["maxh"]) > zona["w"] * 0.9
+    titulo = (f'<div class="titulo-3d titulo-fonte">{_palavras(c["titulo"], c.get("destaque"))}</div>'
+              if c.get("titulo") else "")
+    js_titulo = revelar(".titulo-3d .palavra-anim", "A + .1", .07, 18, .4)
+    livre = (zona["faixa"][1] - zona["faixa"][0]) if zona.get("faixa") else zona["maxh"]
+    sobra = livre - 2 * 38 * k - (70 * k if cabeca else 0) - (90 * k if titulo else 0)
+    itens = [it if isinstance(it, dict) else {"texto": it} for it in c.get("itens") or []]
+
+    if tipo == "obra":
+        rel = c.get("imagem", "")
+        src, prop = card.get("_imgs", {}).get(rel), card.get("_prop", {}).get(rel, .75)
+        credito = c.get("credito") or card.get("_creditos", {}).get(rel, "")
+        textos = (titulo + (f'<div class="legenda-3d">{e(c["legenda"])}</div>' if c.get("legenda") else "")
+                  + (f'<div class="credito">{e(credito)}</div>' if credito else ""))
+        lado_a_lado = not em_pe and bool(textos)  # deitado: imagem à esquerda e textos à direita, a imagem fica maior
+        if lado_a_lado:
+            alt = max(160.0, (livre - 2 * 38 * k - (70 * k if cabeca else 0)) * .9)
+            ih = min(alt, largura * .5 * prop)
+        else:
+            alt = max(160.0, (sobra - (40 * k if c.get("legenda") else 0) - (30 * k if credito else 0)) * .9)
+            ih = min(alt, largura * .9 * prop)
+        iw = ih / prop
+        cena = (f'<div class="cena3d" style="height:{ih * 1.08:.0f}px;flex:none;width:{iw * 1.15:.0f}px">'
+                f'<div class="quadro" style="width:{iw:.0f}px;height:{ih:.0f}px">'
+                + (f'<img src="{src}" alt="">' if src else "") + '<div class="brilho"></div></div></div>')
+        h = cabeca + (f'<div class="obra-lado">{cena}<div class="obra-textos">{textos}</div></div>' if lado_a_lado
+                      else cena + textos)
+        j = f"""
+const t0 = {js(c.get("em"))} !== null ? Math.max(A + .05, {js(c.get("em"))} - .2) : A + .1;
+const q = sel(".quadro");
+tl.fromTo(q, {{rotationY: -40 * DIR, rotationX: 10, z: -260, opacity: 0}}, {{rotationY: 12 * DIR, rotationX: 4, z: 0, opacity: 1, duration: 1.4, ease: "power3.out"}}, t0);
+tl.to(q, {{rotationY: -9 * DIR, rotationX: -2, duration: Math.max(.5, B - t0 - 1.7), ease: "sine.inOut"}}, t0 + 1.4);
+tl.fromTo(sel(".brilho"), {{xPercent: -130}}, {{xPercent: 130, duration: 1.3, ease: "power2.inOut"}}, t0 + .5);
+{revelar(".titulo-3d .palavra-anim", "t0 + .6", .07, 18, .4)}
+tl.from(sel(".legenda-3d"), {{opacity: 0, y: 10 * K, duration: .4, ease: ENT}}, t0 + 1.0);
+tl.from(sel(".credito"), {{opacity: 0, duration: .5, ease: "power1.out"}}, t0 + 1.2);"""
+        return h, j
+
+    tempos = _tempos_itens(card, itens, .3 if tipo != "orbita" else .9)
+
+    if tipo == "galeria":
+        props = [card.get("_prop", {}).get(it["imagem"]) for it in itens if it.get("imagem")]
+        prop = min(1.0, max(.6, props[0])) if props and props[0] else .75  # foto em pé é recortada em quadrado
+        iw = largura * (.62 if em_pe else .44)
+        creditos = list(dict.fromkeys(it.get("credito") or card.get("_creditos", {}).get(it.get("imagem"), "") for it in itens))
+        creditos = [x for x in creditos if x]
+        legenda_h = 46 * k if any(it.get("rotulo") for it in itens) else 0  # créditos vão no canto, fora do fluxo
+        if iw * prop + legenda_h > sobra:
+            iw = max(120.0, (sobra - legenda_h) / prop)
+        ih = iw * prop
+        pecas = []
+        for n, it in enumerate(itens, start=1):
+            src = card.get("_imgs", {}).get(it.get("imagem"))
+            n_letras = max([len(x) for x in str(it.get("texto", "")).split()] + [4])
+            fonte = min(iw * .16, iw * .8 / (n_letras * .62))
+            foto = (f'<div class="foto" style="height:{ih:.0f}px"><img src="{src}" alt=""></div>' if src else
+                    f'<div class="foto texto-peca titulo-fonte" style="height:{ih:.0f}px;font-size:{fonte:.0f}px">'
+                    f'<span>{e(it.get("texto", ""))}</span></div>')
+            pecas.append(f'<div class="peca" id="{card["id"]}-g{n}" style="width:{iw:.0f}px;margin-left:{-iw / 2:.0f}px">{foto}'
+                         + (f'<div class="rotulo-peca">{e(it["rotulo"])}</div>' if it.get("rotulo") else "") + "</div>")
+        h = (cabeca + titulo + f'<div class="palco galeria-palco" style="height:{ih + legenda_h + 10 * k:.0f}px">{"".join(pecas)}</div>'
+             + (f'<div class="credito credito-canto">Imagens: {e(" · ".join(creditos))}</div>' if creditos else ""))
+        j = js_titulo + f"""
+const T = {js(tempos)}, S = {iw * (.74 if not em_pe else .5):.1f}, PROF = {iw * .55:.1f};
+const pecas = Array.prototype.slice.call(document.querySelectorAll(sel(".peca")));
+{JS_SUAVE}{JS_POSICAO}
+function desenhar(t) {{
+  const a = posicao(t);
+  pecas.forEach(function (el, i) {{
+    const d = i - a, ad = Math.abs(d);
+    el.style.transform = "translateX(" + (d * S) + "px) translateZ(" + (-ad * PROF) + "px) rotateY(" + Math.max(-55, Math.min(55, -d * 48)) + "deg)";
+    el.style.zIndex = String(100 - Math.round(ad * 10));
+    el.style.opacity = String(Math.max(0, 1 - Math.max(0, ad - 1.6)));
+    el.style.filter = "brightness(" + (1 - Math.min(.55, ad * .4)) + ")";
+  }});
+}}{JS_RODAR}
+tl.from(sel(".galeria-palco"), {{opacity: 0, scale: .9, duration: .6, ease: ENT}}, A + .1);"""
+        return h, j
+
+    if tipo == "linha-do-tempo":
+        S = largura * (.42 if not em_pe else .62)
+        hh = min(max(220 * k, sobra * .8), 330 * k)
+        eventos = "".join(
+            f'<div class="evento" id="{card["id"]}-e{n}" style="left:{(n - 1) * S:.0f}px;width:{S * .9:.0f}px;margin-left:{-S * .45:.0f}px">'
+            f'<div class="data titulo-fonte">{e(str(it.get("data", "")))}</div><div class="ponto"></div>'
+            f'<div class="texto-ev">{e(it.get("texto", ""))}</div></div>'
+            for n, it in enumerate(itens, start=1))
+        comp = max(1, len(itens) - 1) * S
+        h = (cabeca + titulo + f'<div class="palco linha-palco" style="height:{hh:.0f}px"><div class="trilho-rot">'
+             f'<div class="trilho3d"><div class="linha-base" style="width:{comp:.0f}px"></div><div class="linha-cheia"></div>'
+             f'{eventos}</div></div></div>')
+        j = js_titulo + f"""
+const T = {js(tempos)}, S = {S:.1f};
+const trilho = document.querySelector(sel(".trilho3d")), cheia = document.querySelector(sel(".linha-cheia"));
+const evs = Array.prototype.slice.call(document.querySelectorAll(sel(".evento")));
+{JS_SUAVE}{JS_POSICAO}
+function desenhar(t) {{
+  const a = posicao(t), vis0 = suave((t - T[0] + .3) / .5);
+  trilho.style.transform = "translateX(" + (-a * S) + "px)";
+  cheia.style.width = (a * S) + "px";
+  evs.forEach(function (el, i) {{
+    const ad = Math.abs(i - a), aparece = i === 0 ? vis0 : suave((a - i + .9) / .5);
+    el.style.opacity = String(aparece * (1 - Math.min(.6, ad * .5)));
+    el.style.transform = "scale(" + (1 - Math.min(.28, ad * .22)) + ")";
+  }});
+}}{JS_RODAR}
+tl.from(sel(".linha-palco"), {{opacity: 0, duration: .5, ease: "power1.out"}}, A + .1);"""
+        return h, j
+
+    # orbita
+    Rx = largura * (.36 if not em_pe else .42)
+    Ry = Rx * (.3 if not em_pe else .45)
+    hh = min(sobra, 2 * Ry + 200 * k)
+    centro = str(c.get("centro", ""))
+    fonte_centro = min(64 * k, 2 * Rx * .62 / (max(len(centro), 4) * .56))  # cabe dentro do anel
+    sats = "".join(f'<div class="satelite" id="{card["id"]}-s{n}">{e(it.get("texto", ""))}</div>'
+                   for n, it in enumerate(itens, start=1))
+    h = (cabeca + titulo + f'<div class="palco orbita-palco" style="height:{hh:.0f}px">'
+         f'<div class="anel" style="width:{2 * Rx:.0f}px;height:{2 * Ry:.0f}px;margin:{-Ry:.0f}px 0 0 {-Rx:.0f}px"></div>'
+         f'<div class="centro-orb titulo-fonte" style="font-size:{fonte_centro:.0f}px">{e(centro)}</div>{sats}</div>')
+    t_centro = c.get("em") if c.get("em") is not None else card["inicio"] + .2
+    j = js_titulo + f"""
+const T = {js(tempos)}, RX = {Rx:.1f}, RY = {Ry:.1f}, N = T.length;
+const sats = Array.prototype.slice.call(document.querySelectorAll(sel(".satelite")));
+{JS_SUAVE}
+function desenhar(t) {{
+  const base = (t - A) * .35;
+  sats.forEach(function (el, i) {{
+    const ang = base + i * 6.2832 / N + 1.2, s = Math.sin(ang), prof = (s + 1) / 2, p = suave((t - T[i]) / .55);
+    el.style.transform = "translate(-50%, -50%) translate(" + (Math.cos(ang) * RX) + "px, " + (s * RY) + "px) scale(" + ((.72 + .38 * prof) * (.6 + .4 * p)) + ")";
+    el.style.opacity = String(p * (.45 + .55 * prof));
+    el.style.zIndex = s > 0 ? "3" : "1";
+  }});
+}}{JS_RODAR}
+tl.from(sel(".anel"), {{opacity: 0, scale: .6, duration: .8, ease: "power3.out"}}, {t_centro:.3f});
+if (REVELAR === "desfoque") tl.fromTo(sel(".centro-orb"), {{opacity: 0, filter: "blur(16px)"}}, {{opacity: 1, filter: "blur(0px)", duration: .8, ease: "power2.out"}}, {t_centro:.3f});
+else tl.from(sel(".centro-orb"), {{opacity: 0, scale: .5, duration: .55, ease: MOLA}}, {t_centro:.3f});"""
+    return h, j
 
 
 def _fmt_num(v: float, casas: int) -> str:
@@ -719,14 +1005,21 @@ def css_modelo(tipo: str, seletor: str, card: dict) -> str:
 
 
 def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str, dur: float, fps: int,
-                zonas: dict[str, dict], video_src: str | None = "input-video.mp4", fundo: str | None = None) -> str:
+                zonas: dict[str, dict], video_src: str | None = "input-video.mp4", fundo: str | None = None,
+                janela: tuple[float, float] | None = None) -> str:
+    """janela=(A, B): só o trecho A–B do vídeo (render por capítulo). Os cards guardam os tempos do vídeo
+    inteiro; a timeline do trecho só avança a timeline principal de A até B, sem som (o áudio entra no fim)."""
     W, H = layout["largura"], layout["altura"]
+    fim_total, A = dur, 0.0
+    if janela:
+        # um tico a menos que o número exato de quadros: o HyperFrames arredonda para cima e geraria 1 quadro a mais
+        A, dur = janela[0], round((janela[1] - janela[0]) * fps) / fps - 0.0005
     fontes = {}
     for papel, (familia, arq, peso) in est["fontes"].items():
         fontes[papel] = (familia, arq, peso)
     ff = "\n".join(
         f'@font-face {{ font-family: "{fam}"; src: url("fonts/{arq}") format("truetype"); font-weight: {peso}; font-display: block; }}'
-        for fam, arq, peso in {v for v in fontes.values()})
+        for fam, arq, peso in sorted({v for v in fontes.values()}))  # ordem fixa: o render por capítulo compara o HTML
     vars_css = ";\n  ".join(f"{k}: {v}" for k, v in est["vars"].items())
     vars_css += (f';\n  --fonte-titulo: "{fontes["titulo"][0]}";\n  --fonte-texto: "{fontes["texto"][0]}";'
                  f'\n  --kicker-caixa: {"uppercase" if est.get("kicker_maiusculas", True) else "none"};'
@@ -750,16 +1043,16 @@ def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str
             f'transform: scale({fit_escala}); transform-origin: {z["origem"]}; }}')
         inner, j = modelo(card, est, marca, icones, z)
         classes = "root" + (" fio" if est.get("fio_lateral") else "")
-        comp = (" compacto" if z.get("compacto") else "") + (" centro" if z.get("faixa") else "")
+        comp = (" compacto" if z.get("compacto") else "") + (" centro" if z.get("faixa") else "") + (" em-pe" if H > W else "")
         dur_card = round(card["fim"] - card["inicio"], 3)
         hosts.append(
-            f'<div id="host-{cid}" class="card-host clip" data-card-id="{cid}" data-start="{card["inicio"]:.3f}" '
+            f'<div id="host-{cid}" class="card-host clip" data-card-id="{cid}" data-start="{card["inicio"] - A:.3f}" '
             f'data-duration="{dur_card}" data-track-index="{2 + n}" '
             f'style="width:{W}px;height:{H}px;visibility:hidden;opacity:0;">\n'
             f'  <div class="card{comp}" data-card-id="{cid}" data-tipo="{card["tipo"]}"><div class="fit"><div class="{classes}">{inner}</div></div></div>\n</div>')
         dx = {"esquerda": -1, "direita": 1}.get(z["lado"], 0)
         dy = -1 if z["lado"] == "topo" else 0
-        segura = card["fim"] >= dur - 0.05
+        segura = card["fim"] >= fim_total - 0.05
         js_cards.append(f"""
 // {cid}: {card['tipo']} {card['inicio']:.2f}s–{card['fim']:.2f}s ({z['lado']})
 (function () {{
@@ -773,10 +1066,18 @@ def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str
     video = ""
     if video_src:
         video = (f'<div class="video-wrapper" style="width:{W}px;height:{H}px;">'
-                 f'<video id="bg-video" src="{video_src}" muted playsinline data-start="0" data-duration="{dur:.3f}" data-track-index="1"></video></div>\n'
-                 f'<audio id="source-audio" src="{video_src}" data-start="0" data-duration="{dur:.3f}" data-track-index="{len(hosts) + 3}" data-volume="1"></audio>')
+                 f'<video id="bg-video" src="{video_src}" muted playsinline data-start="0" data-duration="{dur:.3f}" '
+                 + (f'data-media-start="{A:.3f}" ' if janela else '') + 'data-track-index="1"></video></div>\n')
+        if not janela:
+            video += (f'<audio id="source-audio" src="{video_src}" data-start="0" data-duration="{dur:.3f}" '
+                      f'data-track-index="{len(hosts) + 3}" data-volume="1"></audio>')
     elif fundo:
         video = f'<img id="fundo" class="clip" src="{fundo}" data-start="0" data-duration="{dur:.3f}" data-track-index="1" style="position:absolute;left:0;top:0;width:{W}px;height:{H}px;object-fit:cover;">'
+    registrar = 'window.__timelines["editor-motion"] = tl;'
+    if janela:
+        registrar = ('const trecho = window.gsap.timeline({paused: true});\n'
+                     f'  trecho.add(tl.tweenFromTo({A:.3f}, {A + dur:.3f}, {{duration: {dur:.3f}, ease: "none"}}), 0);\n'
+                     '  window.__timelines["editor-motion"] = trecho;')
 
     return f"""<!doctype html>
 <html lang="pt-BR">
@@ -815,7 +1116,7 @@ def montar_html(roteiro: dict, layout: dict, est: dict, marca: dict, icones: str
   }}
 {''.join(js_cards)}
   window.__timelines = window.__timelines || {{}};
-  window.__timelines["editor-motion"] = tl;
+  {registrar}
 }})();
 </script>
 </div>
@@ -842,6 +1143,65 @@ def preparar_publico(pub: Path, est: dict, base_mp4: Path | None, marca: dict) -
             os.link(base_mp4, destino)  # mesmo disco: sem ocupar espaço de novo
         except OSError:
             shutil.copy2(base_mp4, destino)
+
+
+TIPOS_IMAGEM = ("obra", "galeria")
+LADO_MAX_IMAGEM = 1600
+
+
+def imagens_do_card(card: dict) -> list[str]:
+    c = card.get("campos", {})
+    out = [c["imagem"]] if c.get("imagem") else []
+    return out + [it["imagem"] for it in c.get("itens") or [] if isinstance(it, dict) and it.get("imagem")]
+
+
+def preparar_imagens(cards: list[dict], trab: Path, avisos: list[str]) -> dict[str, Path]:
+    """Imagens dos cards de imagem: cópia reduzida (até 1600 px) em motion/cache-imagens, com nome que muda
+    se o arquivo mudar (o render por capítulo percebe). Guarda no card o nome público, a proporção e o crédito."""
+    from PIL import Image
+
+    from imagens import credito_texto, ler_creditos, pasta_imagens
+
+    creditos, pasta_wm = ler_creditos(trab), pasta_imagens(trab).resolve()
+    cache = trab / "motion" / "cache-imagens"
+    arquivos: dict[str, Path] = {}
+    for card in cards:
+        if card["tipo"] not in TIPOS_IMAGEM:
+            continue
+        card["_imgs"], card["_prop"], card["_creditos"] = {}, {}, {}
+        for i, rel in enumerate(imagens_do_card(card)):
+            src = _caminho_imagem(card, rel)
+            if not src.exists():
+                avisos.append(f"{card['id']}: imagem não encontrada: {rel}")
+                continue
+            st = src.stat()
+            chave = hashlib.sha1(f"{src.resolve()}:{st.st_size}:{int(st.st_mtime)}".encode()).hexdigest()[:12]
+            destino = cache / f"{chave}.jpg"
+            if not destino.exists():
+                cache.mkdir(parents=True, exist_ok=True)
+                with Image.open(src) as im:
+                    im = im.convert("RGB")
+                    im.thumbnail((LADO_MAX_IMAGEM, LADO_MAX_IMAGEM), Image.LANCZOS)
+                    im.save(destino, quality=90)
+            with Image.open(destino) as im:
+                card["_prop"][rel] = im.height / im.width
+            nome = f"img/{chave}-{card['id']}-{i}.jpg"
+            card["_imgs"][rel] = nome
+            arquivos[nome] = destino
+            if src.resolve().parent == pasta_wm and src.name in creditos:
+                card["_creditos"][rel] = credito_texto(creditos[src.name])
+    return arquivos
+
+
+def copiar_imagens(pub: Path, arquivos: dict[str, Path]) -> None:
+    for nome, src in arquivos.items():
+        destino = pub / nome
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        if not destino.exists():
+            try:
+                os.link(src, destino)
+            except OSError:
+                shutil.copy2(src, destino)
 
 
 def medir(pub: Path, W: int, H: int, tempos: dict[str, float]) -> dict:
@@ -894,13 +1254,22 @@ def montar(trab: Path, formato: str, estilo: str | None, icones: str | None, med
 
     pub = trab / "motion" / formato / "public"
     if pub.exists():
-        shutil.rmtree(pub)
+        apagar_pasta(pub)
     preparar_publico(pub, est, base_mp4, marca)
     tem_logo = (pub / "marca-logo.png").exists()
     cards = [c for c in roteiro["cards"] if c.get("ativo", True)]
+    cap_arq = trab / "capitulos.json"
+    capitulos = json.loads(cap_arq.read_text(encoding="utf-8")) if cap_arq.exists() else []
+    n_cap = 0
     for c in cards:
         c["_logo"] = tem_logo
         c["_base"] = str(trab)
+        if c["tipo"] == "capitulo":  # número do capítulo: o de capitulos.json em que o card cai, senão a ordem
+            n_cap += 1
+            dentro = [i for i, cp in enumerate(capitulos, start=1) if cp["inicio"] <= c["inicio"] + 1.0]
+            c["_numero"] = dentro[-1] if dentro else n_cap
+    imagens_pub = preparar_imagens(cards, trab, avisos)
+    copiar_imagens(pub, imagens_pub)
     if layout["altura"] > layout["largura"] or layout["formato"] == "react" or layout.get("centralizado"):
         # uma faixa só para os cards: se dois se encostam no tempo, o anterior sai antes do próximo entrar
         ordem = sorted(cards, key=lambda c: c["inicio"])
@@ -977,8 +1346,23 @@ def montar(trab: Path, formato: str, estilo: str | None, icones: str | None, med
         if _sobrepoe(ret, proibidas["legenda"]):
             avisos.append(f"{c['id']}: encosta na área da legenda; confira na prévia")
 
+    blocos = planejar_blocos(cards, dur, info["fps_int"], capitulos, avisos)
+    raiz_blocos = trab / "motion" / formato / "capitulos"
+    if raiz_blocos.exists():
+        apagar_pasta(raiz_blocos)
+    for b in blocos:
+        dentro = [c for c in cards if b["inicio"] <= c["inicio"] < b["fim"]]
+        b["cards"] = [c["id"] for c in dentro]
+        # cada capítulo é um projeto à parte (o HyperFrames não aceita duas composições na mesma pasta)
+        pub_b = pasta_bloco(trab, formato, b["n"])
+        preparar_publico(pub_b, est, base_mp4, marca)
+        copiar_imagens(pub_b, imagens_pub)
+        (pub_b / "index.html").write_text(
+            montar_html({"cards": dentro}, layout, est, marca, icones, dur, info["fps_int"], zonas,
+                        janela=(b["inicio"], b["fim"])), encoding="utf-8")
+
     resumo = {"formato": formato, "estilo": est["id"], "icones": icones, "duracao": round(dur, 3),
-              "fps": info["fps_int"], "cards": [{"id": c["id"], "tipo": c["tipo"], "inicio": c["inicio"], "fim": c["fim"],
+              "fps": info["fps_int"], "blocos": blocos, "cards": [{"id": c["id"], "tipo": c["tipo"], "inicio": c["inicio"], "fim": c["fim"],
                                                    "cheio": tempo_cheio(c), "lado": zonas[c["id"]]["lado"],
                                                    "escala": zonas[c["id"]].get("fit", 1.0),
                                                    "caixa": c.get("_medida")} for c in cards],
@@ -994,11 +1378,141 @@ def montar(trab: Path, formato: str, estilo: str | None, icones: str | None, med
     return resumo
 
 
+# ------------------------------------------------------ render por capítulo ----
+# Vídeo longo (ou com capitulos.json) é renderizado em trechos: cada um vira motion/<formato>/blocos/NN.mp4
+# e só é refeito se o HTML dele ou o vídeo de base mudarem. Os cortes caem num instante sem card na tela,
+# no quadro exato, então juntar os trechos e pôr o som do base.mp4 dá o mesmo vídeo de um render só.
+
+BLOCO_SEM_CAPITULOS = 150.0  # abaixo disso, sem capítulos, um render só
+BLOCO_ALVO = 75.0            # sem capítulos: um trecho a cada ~75 s
+BLOCO_MINIMO = 8.0           # nenhum trecho menor que isso
+BLOCO_PROCURA = 15.0         # quanto o corte pode se afastar do ponto pedido para achar a tela sem card
+
+
+def pasta_bloco(trab: Path, formato: str, n: int) -> Path:
+    return trab / "motion" / formato / "capitulos" / f"{n:02d}"
+
+
+def planejar_blocos(cards: list[dict], dur: float, fps: int, capitulos: list[dict], avisos: list[str]) -> list[dict]:
+    if not capitulos and dur < BLOCO_SEM_CAPITULOS:
+        return []
+    if capitulos:
+        pedidos = [(c["inicio"], c["titulo"]) for c in capitulos[1:]]
+        titulos = [capitulos[0]["titulo"]]
+    else:
+        n = max(2, round(dur / BLOCO_ALVO))
+        pedidos = [(dur * k / n, None) for k in range(1, n)]
+        titulos = [None]
+
+    def livre(t: float) -> bool:
+        return not any(c["inicio"] < t - 1e-6 and c["fim"] > t + 1e-6 for c in cards)
+
+    cortes: list[float] = []
+    for alvo, titulo in pedidos:
+        k0, raio = round(alvo * fps), int(BLOCO_PROCURA * fps)
+        anterior = cortes[-1] if cortes else 0.0
+        escolhido = None
+        for d in range(raio + 1):
+            for k in ((k0 - d, k0 + d) if d else (k0,)):
+                t = k / fps
+                if t - anterior >= BLOCO_MINIMO and dur - t >= BLOCO_MINIMO and livre(t):
+                    escolhido = t
+                    break
+            if escolhido is not None:
+                break
+        if escolhido is None:
+            if titulo:
+                avisos.append(f"capítulo \"{titulo}\": um card atravessa o começo dele; renderizado junto com o anterior")
+            continue
+        if titulo and abs(escolhido - alvo) > 1.5:
+            avisos.append(f"capítulo \"{titulo}\": o trecho começa em {escolhido:.1f}s (pedido {alvo:.1f}s, havia um card na tela)")
+        cortes.append(escolhido)
+        titulos.append(titulo)
+    if not cortes:
+        return []
+    limites = [0.0, *cortes, dur]
+    return [{"n": i + 1, "inicio": round(a, 4), "fim": round(b, 4), "titulo": titulos[i]}
+            for i, (a, b) in enumerate(zip(limites, limites[1:]))]
+
+
+def _assinatura(html_arq: Path, base_mp4: Path, fps: int) -> str:
+    h = hashlib.sha1(html_arq.read_bytes())
+    st = base_mp4.stat()
+    h.update(f"{st.st_size}:{int(st.st_mtime)}:{fps}".encode())
+    return h.hexdigest()
+
+
+def _render_hf(pub: Path, destino: Path, fps: int) -> None:
+    r = subprocess.run([*bin_hyperframes(), "render", str(pub), "-o", str(destino), "--fps", str(fps), "--quiet"],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode or not destino.exists():
+        raise SystemExit("falhou o render do motion:\n" + re.sub(r"\x1b\[[0-9;]*m", "", (r.stdout or "") + (r.stderr or ""))[-2000:])
+
+
+def _quadros(mp4: Path) -> int:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets",
+                        "-show_entries", "stream=nb_read_packets", "-of", "csv=p=0", str(mp4)],
+                       capture_output=True, text=True, check=True)
+    return int(r.stdout.strip().split(",")[0])
+
+
+def render_blocos(trab: Path, formato: str, montagem: dict) -> Path:
+    pasta = trab / "motion" / formato / "blocos"
+    pasta.mkdir(parents=True, exist_ok=True)
+    base_mp4 = trab / formato / "base.mp4"
+    fps, blocos = montagem["fps"], montagem["blocos"]
+    total = len(blocos)
+    feitos = 0
+    for b in blocos:
+        n = b["n"]
+        saida, meta = pasta / f"{n:02d}.mp4", pasta / f"{n:02d}.json"
+        pub_b = pasta_bloco(trab, formato, n)
+        assin = _assinatura(pub_b / "index.html", base_mp4, fps)
+        anterior = json.loads(meta.read_text(encoding="utf-8")) if meta.exists() else {}
+        if saida.exists() and anterior.get("assinatura") == assin:
+            print(f"capítulo {n}/{total}: sem mudança, aproveitado", flush=True)
+            continue
+        tmp = pasta / f"{n:02d}.tmp.mp4"
+        tmp.unlink(missing_ok=True)
+        _render_hf(pub_b, tmp, fps)
+        esperado = round((b["fim"] - b["inicio"]) * fps)
+        obtido = _quadros(tmp)
+        if obtido > esperado:  # quadro a mais empurraria todo o resto do vídeo: corta a sobra do fim
+            aparado = pasta / f"{n:02d}.apar.mp4"
+            subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(tmp), "-map", "0:v:0", "-frames:v", str(esperado),
+                            "-c", "copy", str(aparado)], check=True)
+            aparado.replace(tmp)
+        elif obtido < esperado:
+            print(f"aviso: capítulo {n} saiu com {obtido} quadros (esperado {esperado}); o som pode adiantar",
+                  flush=True)
+        tmp.replace(saida)
+        meta.write_text(json.dumps({"assinatura": assin, "inicio": b["inicio"], "fim": b["fim"]}), encoding="utf-8")
+        feitos += 1
+        print(f"capítulo {n}/{total}: pronto", flush=True)
+    for velho in pasta.glob("*.mp4"):  # trechos de uma divisão anterior (mais capítulos do que agora)
+        if velho.stem.isdigit() and int(velho.stem) > total:
+            velho.unlink()
+            (pasta / f"{velho.stem}.json").unlink(missing_ok=True)
+
+    lista = pasta / "lista.txt"
+    lista.write_text("".join(f"file '{(pasta / f'{b['n']:02d}.mp4').as_posix()}'\n" for b in blocos), encoding="utf-8")
+    destino = trab / formato / "animado.mp4"
+    tmp = destino.with_suffix(".tmp.mp4")
+    r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", str(lista), "-i", str(base_mp4),
+                        "-map", "0:v:0", "-map", "1:a:0?", "-c", "copy", "-t", f"{montagem['duracao']:.3f}",
+                        "-movflags", "+faststart", str(tmp)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode or not tmp.exists():
+        raise SystemExit("falhou a junção dos capítulos:\n" + (r.stderr or "")[-1500:])
+    tmp.replace(destino)
+    print(f"capítulos renderizados agora: {feitos} de {total}", flush=True)
+    return destino
+
+
 # --------------------------------------------------------- prévia / render ----
 
 def snapshot(pub: Path, tempos: list[float], saida: Path) -> list[Path]:
     if saida.exists():
-        shutil.rmtree(saida)
+        apagar_pasta(saida)
     at = ",".join(f"{t:.2f}" for t in tempos)
     r = subprocess.run([*bin_hyperframes(), "snapshot", str(pub), "--at", at, "--no-end", "--describe", "false",
                         "-o", str(saida)], capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -1042,27 +1556,39 @@ def folha(fotos: list[Path], rotulos: list[str], destino: Path, colunas: int | N
     folha_img.save(destino, quality=88)
 
 
-def previa(trab: Path, formato: str) -> Path:
+def _mmss(t: float) -> str:
+    return f"{int(t // 60)}:{int(t % 60):02d}"
+
+
+def previa(trab: Path, formato: str, capitulo: int | None = None) -> Path:
+    """Folha com um quadro de cada card. Com capitulo=N, só os cards daquele capítulo (vídeo longo)."""
     montagem = json.loads((trab / "motion" / formato / "montagem.json").read_text(encoding="utf-8"))
     pub = trab / "motion" / formato / "public"
-    cards = montagem["cards"]
-    if not cards:
-        raise SystemExit("roteiro sem cards ativos")
-    fotos = snapshot(pub, [c["cheio"] for c in cards], trab / "motion" / formato / "snapshots")
-    rot = [f"{n}. {c['tipo']}  {c['inicio']:.1f}s–{c['fim']:.1f}s" for n, c in enumerate(cards, start=1)]
-    destino = trab / "motion" / formato / "previa.jpg"
+    numerados = list(enumerate(montagem["cards"], start=1))
+    nome = "previa.jpg"
+    if capitulo is not None:
+        bloco = next((b for b in montagem.get("blocos") or [] if b["n"] == capitulo), None)
+        if not bloco:
+            raise SystemExit(f"o vídeo não tem o capítulo {capitulo} (veja \"blocos\" em montagem.json)")
+        numerados = [(n, c) for n, c in numerados if c["id"] in bloco["cards"]]
+        nome = f"previa-capitulo-{capitulo:02d}.jpg"
+    if not numerados:
+        raise SystemExit("roteiro sem cards ativos" + (" neste capítulo" if capitulo is not None else ""))
+    longo = montagem["duracao"] >= 120
+    fotos = snapshot(pub, [c["cheio"] for _, c in numerados], trab / "motion" / formato / "snapshots")
+    rot = [f"{n}. {c['tipo']}  " + (_mmss(c["inicio"]) if longo else f"{c['inicio']:.1f}s–{c['fim']:.1f}s")
+           for n, c in numerados]
+    destino = trab / "motion" / formato / nome
     folha(fotos, rot, destino)
     return destino
 
 
 def render(trab: Path, formato: str) -> Path:
     montagem = json.loads((trab / "motion" / formato / "montagem.json").read_text(encoding="utf-8"))
-    pub = trab / "motion" / formato / "public"
+    if montagem.get("blocos"):
+        return render_blocos(trab, formato, montagem)
     destino = trab / formato / "animado.mp4"
-    r = subprocess.run([*bin_hyperframes(), "render", str(pub), "-o", str(destino), "--fps", str(montagem["fps"]),
-                        "--quiet"], capture_output=True, text=True, encoding="utf-8", errors="replace")
-    if r.returncode or not destino.exists():
-        raise SystemExit("falhou o render do motion:\n" + re.sub(r"\x1b\[[0-9;]*m", "", (r.stdout or "") + (r.stderr or ""))[-2000:])
+    _render_hf(trab / "motion" / formato / "public", destino, montagem["fps"])
     return destino
 
 
@@ -1106,7 +1632,7 @@ def galeria(trab: Path, formato: str, tipo: str = "estilos") -> Path:
     t_quadro = quadro_bom(base_mp4, [d * f for f in (0.4, 0.3, 0.5, 0.6, 0.2, 0.7, 0.8)])
     trab_gal = trab / "motion" / formato / "galeria"
     if trab_gal.exists():
-        shutil.rmtree(trab_gal)
+        apagar_pasta(trab_gal)
     fotos, rotulos = [], []
     for n, (est_nome, ic) in enumerate(variantes, start=1):
         est = carregar_estilo(est_nome, marca)
@@ -1150,6 +1676,7 @@ def main() -> None:
     ap.add_argument("--icones", choices=ESTILOS_ICONE)
     ap.add_argument("--tipo", choices=["estilos", "icones"], default="estilos")
     ap.add_argument("--sem-medir", action="store_true")
+    ap.add_argument("--capitulo", type=int, help="previa: só os cards deste capítulo")
     a = ap.parse_args()
     trab = a.trabalho.resolve()
 
@@ -1165,11 +1692,13 @@ def main() -> None:
         print(f"motion montado: {len(r['cards'])} cards, estilo {r['estilo']}, ícones {r['icones']}, lint {'ok' if r['lint_ok'] else 'COM ERROS'}")
         for c in r["cards"]:
             print(f"  {c['id']} {c['tipo']:<13} {c['inicio']:6.2f}–{c['fim']:6.2f}s  lado {c['lado']:<8} escala {c['escala']}")
+        for b in r["blocos"]:
+            print(f"  capítulo {b['n']}: {b['inicio']:7.2f}–{b['fim']:7.2f}s  {len(b['cards'])} cards  {b['titulo'] or ''}")
         for av in r["avisos"]:
             print("  aviso: " + av)
         return
     if a.acao == "previa":
-        print(f"prévia → {previa(trab, a.formato)}")
+        print(f"prévia → {previa(trab, a.formato, a.capitulo)}")
         return
     if a.acao == "galeria":
         print(f"galeria → {galeria(trab, a.formato, a.tipo)}")

@@ -1,0 +1,81 @@
+{
+  "id": "vibrante",
+  "nome": "Vibrante",
+  "descricao": "Sem caixa: texto grande solto sobre fundo claro, palavras-chave marcadas em cores vivas (marca-texto em degradê), ícones em vidro e entrada surgindo do desfoque. Moderno e colorido; fica melhor em vídeo narrado com fundo claro.",
+  "fontes": {
+    "titulo": [
+      "Poppins Black",
+      "Poppins-900.ttf",
+      900
+    ],
+    "texto": [
+      "Poppins",
+      "Poppins-700.ttf",
+      700
+    ],
+    "apoio": [
+      "Inter",
+      "Inter-400.ttf",
+      400
+    ]
+  },
+  "vars": {
+    "--bg": "transparent",
+    "--texto": "#10201d",
+    "--suave": "#3d524e",
+    "--destaque": "#2a9d8f",
+    "--destaque-2": "#e63946",
+    "--destaque-3": "#f4a024",
+    "--sobre-destaque": "#ffffff",
+    "--borda": "none",
+    "--raio": "0px",
+    "--sombra": "none",
+    "--caixinha": "rgba(255,255,255,.62)",
+    "--kicker-espaco": ".16em",
+    "--desfoque": "none"
+  },
+  "kicker_maiusculas": true,
+  "animacao": {
+    "entrada": "power3.out",
+    "mola": "back.out(1.7)",
+    "duracao": 0.7,
+    "deslocamento": 30,
+    "revelar": "desfoque"
+  },
+  "icones": "duotone",
+  "css": [
+    ".root { overflow: visible; text-shadow: 0 0 2px rgba(255,255,255,.7), 0 4px 28px rgba(255,255,255,.95); }",
+    ".titulo-fonte { letter-spacing: -.03em; }",
+    ".kicker { color: var(--destaque); font-size: calc(26px * var(--k)); text-shadow: none; }",
+    ".kicker::before { content: \"\"; display: inline-block; width: .6em; height: .6em; border-radius: 50%; margin-right: .55em; vertical-align: .05em; background: linear-gradient(135deg, var(--destaque-3), var(--destaque-2)); }",
+    ".icone-box { background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.95); backdrop-filter: blur(8px); border-radius: 30%; box-shadow: 0 14px 34px -14px rgba(0,0,0,.3); transform: rotate(-8deg); }",
+    ".card[data-tipo=\"lista\"] .icone-box { color: var(--destaque-2); transform: rotate(8deg); }",
+    ".card[data-tipo=\"numero\"] .icone-box { color: var(--destaque-3); }",
+    ".card[data-tipo=\"destaque\"] .aspas { color: var(--destaque-3); }",
+    ".card[data-tipo=\"destaque\"] .frase { font-family: var(--fonte-titulo); font-weight: 900; letter-spacing: -.02em; }",
+    ".item { font-family: var(--fonte-titulo); font-weight: 900; letter-spacing: -.02em; }",
+    ".check { border: none !important; border-radius: 50% !important; background: var(--destaque) !important; box-shadow: 0 8px 20px -8px rgba(0,0,0,.35); }",
+    ".item:nth-child(2) .check { background: var(--destaque-2) !important; }",
+    ".item:nth-child(3) .check { background: var(--destaque-3) !important; }",
+    ".item:nth-child(4) .check { background: #3b82c4 !important; }",
+    ".check path { stroke: #fff !important; }",
+    ".num, .afixo { background: linear-gradient(135deg, var(--destaque-3) 0%, var(--destaque-2) 55%, var(--destaque) 100%); -webkit-background-clip: text; background-clip: text; color: transparent !important; text-shadow: none; }",
+    ".trilho { background: rgba(255,255,255,.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }",
+    ".enche { background: linear-gradient(90deg, var(--destaque), var(--destaque-3), var(--destaque-2)) !important; }",
+    ".legenda-num { color: var(--texto); font-weight: 700; }",
+    ".pilula { background: linear-gradient(100deg, var(--destaque) 0%, #47c7a6 100%); box-shadow: 0 16px 34px -14px color-mix(in srgb, var(--destaque) 80%, transparent); text-shadow: none; }",
+    ".legenda-pt { color: var(--destaque); font-weight: 700; text-shadow: none; }",
+    ".card.centro .root { text-align: center; }",
+    ".card.centro .cabeca { justify-content: center; }",
+    ".card.centro .cabeca .kicker { flex: none; }",
+    ".card[data-tipo=\"pontilhismo\"] .root { color: var(--destaque); }",
+    ".card[data-tipo=\"pontilhismo\"] .titulo { color: var(--texto); }",
+    ".card.centro .itens { width: fit-content; margin-left: auto; margin-right: auto; align-items: flex-start; }",
+    ".destaque-cor { background: linear-gradient(100deg, var(--destaque) 0%, #3b82c4 100%); -webkit-background-clip: text; background-clip: text; color: transparent !important; text-shadow: none; padding-right: .04em; }",
+    ".card[data-tipo=\"destaque\"] .destaque-cor { background-image: linear-gradient(100deg, var(--destaque-2) 0%, var(--destaque-3) 100%); }",
+    ".card[data-tipo=\"pontilhismo\"] .destaque-cor { background-image: linear-gradient(100deg, var(--destaque) 0%, var(--destaque-3) 100%); }",
+    ".item { white-space: nowrap; }",
+    ".card.centro .linha-num { justify-content: center; }",
+    ".card.centro .trilho { margin-left: auto; margin-right: auto; }"
+  ]
+}
