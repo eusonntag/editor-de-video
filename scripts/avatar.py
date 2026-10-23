@@ -101,6 +101,7 @@ def corpo_bloco(vid: str, r: dict, pers: dict, bloco: dict) -> dict:
                          f"(registre com: personagens registrar {r['personagem']} --look {look_nome})")
     corpo = {"type": "avatar", "avatar_id": look["heygen_look"], "title": f"{vid} bloco {bloco['n']}",
              "aspect_ratio": r.get("proporcao") or look.get("proporcao") or "16:9", "resolution": "1080p",
+             "fit": "cover",  # imagem de outra proporção: recorta e preenche a tela (sem faixas)
              "expressiveness": pers.get("expressividade") or "low"}
     gestos = bloco.get("gestos") or look.get("gestos") or pers.get("gestos")
     if gestos:
